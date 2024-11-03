@@ -18,36 +18,34 @@ project/
 │
 ├── sharky/                  // 框架目录
 │   ├── bootstrap.php        // 启动脚本
+│   ├── common.php           // 常量定义
 │   │ 
 │   ├── core/                // 核心目录
 │   │   ├── App.php          // 框架核心
 │   │   ├── Config.php       // 配置管理
 │   │   ├── Container.php    // 简单容器
 │   │   ├── Controller.php   // 控制器基类
+│   │   ├── Database.php     // 数据库管理器
 │   │   ├── Model.php        // 模型基类
 │   │   └── Router.php       // 路由管理
 │   │ 
 │   ├── libs/                // 扩展库
 │   │   ├── Cookie.php       // 状态管理器（Cookie）
 │   │   ├── Session.php      // 会话管理器（Session）
-│   │   ├── Database.php     // 数据库管理器
-│   │   ├── Controller.php   // 控制器基类
-│   │   ├── Model.php        // 模型基类
+│   │   ├── Template.php     // 模板类
+│   │   └── ...
+│   │ 
+│   ├── utils/               // 工具目录
+│   │   ├── ArrayUtils.php   // 多维数组工具
 │   │   └── ...
 │   │
 │   ├── configs/             // 配置目录
 │   │   ├── config.php       // 配置文件
 │   │   └── ...
 │   │
-│   ├── routes/              // 路由目录
-│   │   ├── routes.php       // 路由文件
-│   │   └── ...
-│   │
 │   └── errors/              // 错误模板文件夹
-│       ├── 403.php
 │       ├── 404.php
-│       ├── 405.php
-│       └── 500.php
+│       └── ...
 │ 
 └── app/                     // 应用目录
     ├── controllers/         // 控制器文件夹
@@ -64,7 +62,11 @@ project/
     │   │   └── ...
     │   └── ...
     │
-    └── config/              // 配置文件夹
+    ├── routes/              // 路由目录
+    │   ├── routes.php       // 路由文件
+    │   └── ...
+    │
+    └── config/              // 配置文件夹(会覆盖sharky下面的配置)
         ├── redis.php        // Redis配置文件
         ├── database.php     // 数据库配置文件
         └── ...
@@ -108,6 +110,27 @@ project/
    nginx请参考下方配置，具体以实际情况为准
 
    ````nginx
+    server {
+        listen       80;
+        server_name  you.domain.com;
+        charset      utf-8;
+
+        root    /var/websites/public;
+        
+        location ~ / {
+            index                  index.php;
+            try_files $uri $uri/  /index.php?$query_string;
+            client_max_body_size         50m; 
+            client_body_buffer_size     256k; 
+        }
+
+        location = /index.php {
+            fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
+            fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+            include fastcgi_params;
+            fastcgi_intercept_errors on;
+        }
+    }
    ````
 
    apache请参考下方配置，具体以实际情况为准

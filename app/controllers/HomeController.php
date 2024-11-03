@@ -32,7 +32,7 @@ class HomeController extends Controller
         "直接删除sharky\\libs\\Template.php可移除此模板引擎。\n\n" .
         "如果做API开发，则可以完全移除模版引擎，使用JSON。";
         $html = '<p><a class="link" href="/demo/list">查看 Twig Demo</a></p>';
-        $this->display('home/index.php', ['page' => 'About', 'content' => $content, 'html' => $html]);
+        $this->display('home/index.php', ['page' => 'View', 'content' => $content, 'html' => $html]);
     }
 
     public function about()
@@ -43,7 +43,7 @@ class HomeController extends Controller
         "也是想要构建一个可用于小微型项目的超轻量框架。\n\n" .
         "任何人都可以复制、修改、分发和使用它的副本" .
         "但是由此产生的一切风险和法律责任均与本人无关。";
-        $this->display('home/index.php', ['page' => 'Copyright', 'content' => $content]);
+        $this->display('home/index.php', ['page' => 'About', 'content' => $content]);
     }
 
     public function database()
@@ -53,6 +53,6 @@ class HomeController extends Controller
         "但复杂的多表联合查询尚未实现，若确实有需要\n\n" .
         "可暂用 Database 类的 query 和 execute 方法过渡。\n\n" .
         "当然也可在该模型基础上自行实现，若能共享代码，我们将十分感谢。\n\n";
-        $this->display('home/index.php', ['page' => 'Copyright', 'content' => $content]);
+        $this->display('home/index.php', ['page' => 'Database', 'content' => $content]);
     }
 }
