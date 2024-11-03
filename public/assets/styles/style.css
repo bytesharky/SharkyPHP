@@ -1,0 +1,93 @@
+/* 全局样式 */
+body {
+  font-family: Arial, sans-serif;
+  line-height: 1.6;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+}
+
+header {
+  background-color: #333;
+  color: white;
+  text-align: center;
+  padding: 20px;
+}
+
+p {
+  margin: 5px 0;
+}
+
+main {
+  padding: 20px;
+  margin: 0 auto;
+  background-color: white;
+  box-shadow: 0 0 5px rgb(0 0 0 / 10%);
+}
+
+footer {
+  text-align: center;
+  padding: 10px;
+  background-color: #333;
+  color: white;
+}
+
+/* 文章列表样式 */
+.article-list {
+  list-style-type: none;
+  padding: 0;
+}
+
+.article-item {
+  border-bottom: 1px solid #ddd;
+  padding: 20px 0;
+}
+
+.article-item h2 {
+  margin: 0;
+  font-size: 20px;
+}
+
+.article-item h2 a {
+  color: #333;
+  text-decoration: none;
+}
+
+.article-item h4 a {
+  color: #607d8b;
+  text-decoration: none;
+}
+
+.article-item h4 a:hover {
+  text-decoration: underline;
+}
+
+.article-item h2 a:hover {
+  text-decoration: underline;
+}
+
+.article-author {
+  color: #777;
+  font-size: 14px;
+}
+
+.article-date {
+  color: #777;
+  font-size: 14px;
+}
+
+.article-excerpt {
+  margin: 10px 0;
+}
+
+.article-tags {
+  margin-top: 10px;
+}
+
+.tag {
+  background-color: #007bff;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 3px;
+  margin-right: 5px;
+}
