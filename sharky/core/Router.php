@@ -13,7 +13,7 @@ class Router
 {
     private static $routes = [];
     private static $groupOptions = [];
-    private static $routesPath = SHARKY_ROOT . '/routes/';
+    private static $routesPath = APP_ROOT . '/routes/';
 
     // 加载路由
     public static function loadRoutes()
