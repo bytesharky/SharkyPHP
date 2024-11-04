@@ -48,9 +48,9 @@ class Router
         // 保存当前分组选项
         $previousGroupOptions = self::$groupOptions;
         self::$groupOptions = array_merge(self::$groupOptions, $options);
-// 执行分组回调，注册分组内的路由
+        // 执行分组回调，注册分组内的路由
         call_user_func($callback);
-// 恢复之前的分组选项
+        // 恢复之前的分组选项
         self::$groupOptions = $previousGroupOptions;
     }
 
@@ -80,29 +80,29 @@ class Router
 
         $routeExist = false;
         $method = strtoupper($method);
-// 去除结尾的斜杠以确保准确匹配
+        // 去除结尾的斜杠以确保准确匹配
         $uri = ($uri != '/') ? rtrim($uri, '/') : $uri;
         foreach (self::$routes as $route) {
             if (preg_match($route['path'], $uri, $params)) {
-        // 找到了路由
+                // 找到了路由
                 $routeExist = true;
                 if (
                     ('ALL' === $route['method']) ||
                     ($method === $route['method']) ||
                     (is_array($route['method']) && (
-                    in_array('ALL', $route['method']) ||
-                    in_array($method, $route['method'])))
+                        in_array('ALL', $route['method']) ||
+                        in_array($method, $route['method'])))
                 ) {
                     array_shift($params);
-// 取出匹配到的参数
+                    // 取出匹配到的参数
                     return $this->callControllerMethod($route['callback'], $params);
                 }
             }
         }
 
         if ($routeExist) {
-// 返回405 Method Not Allowed
-            $errCallback = ["Sharky\\Core\\Controller","renderErrorPage"];
+            // 返回405 Method Not Allowed
+            $errCallback = ["Sharky\\Core\\Controller", "renderErrorPage"];
             return $this->callControllerMethod($errCallback, [
                 [
                     'code' => 405,
@@ -111,8 +111,8 @@ class Router
                 ]
             ]);
         } else {
-        // 没有匹配的路由，返回404
-            $errCallback = ["Sharky\\Core\\Controller","renderErrorPage"];
+            // 没有匹配的路由，返回404
+            $errCallback = ["Sharky\\Core\\Controller", "renderErrorPage"];
             return $this->callControllerMethod($errCallback, [
                 [
                     'code' => 404,
@@ -127,10 +127,10 @@ class Router
     {
 
         if (is_array($callback) && is_string($callback[0])) {
-// 实例化控制器
+            // 实例化控制器
             $controller = new $callback[0]();
             $method = $callback[1];
-// 调用实例化后的控制器方法
+            // 调用实例化后的控制器方法
             return call_user_func_array([$controller, $method], $params);
         }
 

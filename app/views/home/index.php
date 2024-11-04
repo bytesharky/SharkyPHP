@@ -23,24 +23,25 @@
 
 <body>
     <div class="logo"></div>
-    <h1><?php echo($page); ?></h1>
+    <h1>{{ $title }}</h1>
     <h2>欢迎使用SharkyPHP</h2>
     <div class="content">
-        <p class="nav">
+        <div class="nav">
             <a class="link" href="/">Index</a>
             <a class="link" href="/about">About</a>
             <a class="link" href="/view">View</a>
             <a class="link" href="/database">Database</a>
             <a class="link" href="https://github.com/bytesharky/sharkphp" target="_blank">Github</a>
-        </p>
-        <pre><?php echo($content) ;?></pre>
-        <?php echo($html ?? '') ;?>
+        </div>
+        <pre>{{ $content }}</pre>
+        {% if $html??false %}
+        <p><a class="link" href="/demo/list">查看 Twig Demo</a></p>
+        {% endif %}
     </div>
     <hr>
     <div class="version">
-        <p><?php echo(PROJECT . ' Version ' . VERSION);
-        ;?></p>
-        <p><?php echo(COPYRIGHT) ;?></p>  
+        <p>{{ PROJECT }} Version {{ VERSION }}</p>
+        <p>{{ COPYRIGHT }}</p>  
     </div>
 </body>
 

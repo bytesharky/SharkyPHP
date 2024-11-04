@@ -2,3 +2,5 @@ vendor
 vendor/*
 node_modules
 node_modules/*
+app/caches
+app/caches/*

@@ -25,7 +25,7 @@ class Container
 
     // 用于存储绑定关系的数组，键为抽象类型名，值为对应的具体实现（可以是闭包函数或者类名等）
     private $bindings = [];
-// 用于存储已经创建的实例，键为抽象类型名，值为对应的实例对象
+    // 用于存储已经创建的实例，键为抽象类型名，值为对应的实例对象
     private $instances = [];
 
     // 获取容器实例
@@ -45,9 +45,9 @@ class Container
         }
 
         if (!($concrete instanceof Closure)) {
-// 驼峰命名
+            // 驼峰命名
             $concrete = ucwords($concrete);
-// 如果不是完整类名添加当前命名空间
+            // 如果不是完整类名添加当前命名空间
             if (strpos($concrete, '\\') === false) {
                 $concrete = __NAMESPACE__ . '\\' . $concrete;
             }
@@ -58,7 +58,7 @@ class Container
             $instance = null;
         }
 
-        $this->bindings[$abstract] = ['concrete' => $concrete, 'className' => $className , 'parameters' => $parameters];
+        $this->bindings[$abstract] = ['concrete' => $concrete, 'className' => $className, 'parameters' => $parameters];
     }
 
     // 创建类的实例，解析并注入依赖
@@ -78,37 +78,37 @@ class Container
         if ($concrete instanceof Closure) {
             $instance = $concrete($this, $parameters);
         } else {
-        // 使用反射创建实例
+            // 使用反射创建实例
             $reflector = new ReflectionClass($concrete);
-        // 获取构造函数信息
+            // 获取构造函数信息
             $constructor = $reflector->getConstructor();
             if ($constructor === null) {
-        // 如果类没有构造函数，直接创建实例
+                // 如果类没有构造函数，直接创建实例
                 $instance = $reflector->newInstance();
             } else {
-    // 获取构造函数的参数信息
+                // 获取构造函数的参数信息
                 $parametersToPass = [];
                 foreach ($constructor->getParameters() as $parameter) {
                     $parameterType = $parameter->getType();
                     if ($parameterType === null) {
-                    // 如果参数没有指定类型
+                        // 如果参数没有指定类型
                         // 直接使用绑定的参数值
                         if (isset($parameters[$parameter->getName()])) {
                             $parametersToPass[] = $parameters[$parameter->getName()];
                         } else {
-                        // 如果没有指定参数值，抛出异常
+                            // 如果没有指定参数值，抛出异常
                             throw new \Exception("缺少参数: " . $parameter->getName());
                         }
                     } else {
-            // 如果参数指定了类型，通过容器获取对应的实例
+                        // 如果参数指定了类型，通过容器获取对应的实例
                         $parameterTypeName = $parameterType->getName();
-            // 这里查找抽象类名对应的绑定关系
+                        // 这里查找抽象类名对应的绑定关系
                         $abstractForTypeName = $this->findAbstractForTypeName($parameterTypeName);
                         $parametersToPass[] = $this->make($abstractForTypeName);
                     }
                 }
 
-            // 使用构造函数创建实例并传递参数
+                // 使用构造函数创建实例并传递参数
                 $instance = $reflector->newInstanceArgs($parametersToPass);
             }
         }

@@ -7,9 +7,6 @@
  * @version 1.0.0
  */
 
-// 定义应用程序根目录
-define('APP_ROOT', __DIR__ . '/../app');
-
 // 定义框架目录常量
 define('SHARKY_ROOT', __DIR__ . '/../sharky');
 
@@ -17,5 +14,5 @@ define('SHARKY_ROOT', __DIR__ . '/../sharky');
 define('PROJECT', "SharkyPHP");
 define('VERSION', "1.0.0");
 define('COPYRIGHT', "Copyright © " .
-((date('Y') > 2024) ? implode('-', range(2024, date('Y'))) : 2024)
-. " Forgot Fish All rights reserved.");
+    ((date('Y') > 2024) ? implode('-', range(2024, date('Y'))) : 2024)
+    . " Forgot Fish All rights reserved.");

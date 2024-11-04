@@ -47,11 +47,11 @@ class DemoController extends TwigController
         // 模拟分页相关数据
         $has_previous_page = true;
         $has_next_page = false;
-// 在控制器中（假设已经初始化好Twig环境为$twig），将数据传递给模板进行渲染
+        // 在控制器中（假设已经初始化好Twig环境为$twig），将数据传递给模板进行渲染
         $this->display('demo/index.twig', [
             'article_list' => $this->article_list,
-            'COPYRIGHT'  => COPYRIGHT,
-            'PROJECT'  => PROJECT,
+            'COPYRIGHT' => COPYRIGHT,
+            'PROJECT' => PROJECT,
         ]);
     }
 

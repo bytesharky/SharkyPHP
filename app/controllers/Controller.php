@@ -35,6 +35,6 @@ class Controller extends BaseController
     // 如果不需要使用模板引擎可以删除此函数
     public function display($name, array $context = []): void
     {
-        echo($this->render($name, $context));
+        echo ($this->render($name, $context));
     }
 }

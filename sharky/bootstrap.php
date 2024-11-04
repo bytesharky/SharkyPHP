@@ -19,10 +19,14 @@ $container = Container::getInstance();
 
 $container->bind('config');
 $container->bind('router');
-$container->bind('app', function ($container) {
-    return new App($container->make('router'), $container->make('config'));
-});
+// $container->bind('app', function ($container) {
+//     return new App($container->make('router'), $container->make('config'));
+// });
 
-// 创建并启动框架
-$app = $container->make('app');
+// // 创建并启动框架
+// $app = $container->make('app');
+// $app->run();
+
+// 这里改为直接创建App，通过容器
+$app = new App($container->make('router'), $container->make('config'));
 $app->run();

@@ -51,9 +51,9 @@ class Config
         foreach ($files as $file) {
             if ($file != '.' && $file != '..' && pathinfo($file, PATHINFO_EXTENSION) === 'php') {
                 $filePath = $directory . '/' . $file;
-        // 加载配置文件并获取其返回的数组内容
+                // 加载配置文件并获取其返回的数组内容
                 $configData = require $filePath;
-        // 将不包含扩展名的文件名作为键，配置内容作为值存入数组
+                // 将不包含扩展名的文件名作为键，配置内容作为值存入数组
                 $data[pathinfo($file, PATHINFO_FILENAME)] = $configData;
             }
         }
@@ -64,6 +64,6 @@ class Config
     // 根据点分字符串读取配置值
     public function get($path, $default = null)
     {
-        return ArrayUtils::get($this->configs, $path, $default = null);
+        return ArrayUtils::get($this->configs, $path, $default);
     }
 }

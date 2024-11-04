@@ -37,7 +37,7 @@ class Model
         // 获取数据库实例
         // $this->db = Container::getInstance()->make('database');
         $this->db = new Database();
-// 获取表字段
+        // 获取表字段
         $this->fields = $this->db->getFields($this->tableName);
     }
 
@@ -48,7 +48,7 @@ class Model
         }
 
         if ($this->currentGroup === null) {
-// 不在分组中，直接添加到主where数组
+            // 不在分组中，直接添加到主where数组
             if (isset($conditions[0]) && !is_array($conditions[0])) {
                 $this->where[] = ['condition' => $conditions, 'operator' => $operator];
             } else {
@@ -57,7 +57,7 @@ class Model
                 }
             }
         } else {
-        // 在分组中，添加到当前分组
+            // 在分组中，添加到当前分组
             if (isset($conditions[0]) && !is_array($conditions[0])) {
                 $this->groups[$this->currentGroup][] = ['condition' => $conditions, 'operator' => $operator];
             } else {
@@ -103,14 +103,14 @@ class Model
                 }
 
                 if (isset($item['type']) && $item['type'] === 'group') {
-    // 处理分组
+                    // 处理分组
                     $groupSql = $this->buildGroupConditions($this->groups[$item['id']], $params);
                     if (!empty($groupSql)) {
                         $whereSql .= "($groupSql)";
                         $firstCondition = false;
                     }
                 } else {
-                // 处理普通条件
+                    // 处理普通条件
                     $condition = $item['condition'];
                     $whereSql .= "{$condition[0]} {$condition[1]} ?";
                     $params[] = $condition[2];
@@ -156,7 +156,7 @@ class Model
         $fieldsSql = $this->buildFields($fields);
         list($whereSql, $params) = $this->buildWhere();
         $sql = "SELECT {$fieldsSql} FROM {$this->tableName}" . $whereSql;
-// 添加 LIMIT 和 OFFSET
+        // 添加 LIMIT 和 OFFSET
         if ($this->limit !== null && $this->limit > 0) {
             $sql .= " LIMIT " . $this->limit;
             if ($this->offset > 0) {
@@ -191,20 +191,20 @@ class Model
             }
 
             $sql = "INSERT INTO {$this->tableName} (" .
-                    implode(',', $fields) .
-                    ") VALUES " .
-                    implode(',', $values);
+                implode(',', $fields) .
+                ") VALUES " .
+                implode(',', $values);
             $this->setLastSql($sql, $params);
             return $this->db->execute($sql, $params);
         } else {
-        // 单条插入
+            // 单条插入
             $fields = array_keys($data);
             $placeholders = array_fill(0, count($fields), '?');
             $sql = "INSERT INTO {$this->tableName} (" .
-                    implode(',', $fields) .
-                    ") VALUES (" .
-                    implode(',', $placeholders) .
-                    ")";
+                implode(',', $fields) .
+                ") VALUES (" .
+                implode(',', $placeholders) .
+                ")";
 
             $this->setLastSql($sql, array_values($data));
             return $this->db->execute($sql, array_values($data));
@@ -249,7 +249,7 @@ class Model
         }
 
         if (is_string($fields)) {
-// 如果是字符串，按逗号分割
+            // 如果是字符串，按逗号分割
             $this->filter = array_map('trim', explode(',', $fields));
         } elseif (is_array($fields)) {
             $this->filter = $fields;
@@ -268,14 +268,14 @@ class Model
         $fields = is_array($fields) ? $fields : explode(', ', $fields);
         foreach ($fields as $field) {
             if (is_array($field)) {
-        // 处理带别名的字段 ['field', 'alias']
+                // 处理带别名的字段 ['field', 'alias']
                 if (count($field) !== 2) {
                     continue;
-// 跳过格式不正确的字段
+                    // 跳过格式不正确的字段
                 }
                 $sqlFields[] = $this->escapeField($field[0]) . ' AS ' . $this->escapeField($field[1]);
             } else {
-    // 处理普通字段
+                // 处理普通字段
                 $sqlFields[] = $this->escapeField($field);
             }
         }
@@ -287,7 +287,7 @@ class Model
     {
         // 移除所有不安全的字符
         $field = preg_replace('/[^a-zA-Z0-9_\.]/', '', $field);
-// 处理可能包含表名的字段 (table.field)
+        // 处理可能包含表名的字段 (table.field)
         $parts = explode('.', $field);
         foreach ($parts as &$part) {
             if ($part !== '*') {
@@ -350,11 +350,11 @@ class Model
     }
 
     /*
-    * 设置分页
-    * @param int $page 页码，从1开始
-    * @param int $pageSize 每页数量
-    * @return $this
-    */
+     * 设置分页
+     * @param int $page 页码，从1开始
+     * @param int $pageSize 每页数量
+     * @return $this
+     */
     public function page($page = 1, $pageSize = 20)
     {
         $page = max(1, intval($page));
@@ -366,11 +366,11 @@ class Model
         return $this;
     }
 
-       /**
-        * 执行分页查询
-        * @param string|array|null $fields
-        * @return array 包含分页信息和数据的数组
-        */
+    /**
+     * 执行分页查询
+     * @param string|array|null $fields
+     * @return array 包含分页信息和数据的数组
+     */
     public function paginate($fields = null)
     {
         // 如果没有设置分页，使用默认值
@@ -384,7 +384,7 @@ class Model
             'total' => $total,
             'data' => $list
         ];
-// 如果是使用page()方法设置的分页
+        // 如果是使用page()方法设置的分页
         if ($this->page !== null) {
             $pageInfo = array_merge($pageInfo, [
                 'current_page' => $this->page,
@@ -410,7 +410,7 @@ class Model
     {
         $this->limit = max(0, intval($limit));
         $this->offset = max(0, intval($offset));
-// 重置page相关参数，因为直接设置了limit
+        // 重置page相关参数，因为直接设置了limit
         $this->page = null;
         $this->pageSize = null;
         return $this;
