@@ -9,6 +9,8 @@
 
 namespace App\Controllers;
 
+use App\Models\DemoModel;
+
 class HomeController extends Controller
 {
     public function index()

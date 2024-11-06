@@ -26,15 +26,15 @@ class Template
         $config = $container->make('config');
 
         // 视图路径和缓存路径
-        $templateDir = $config->get('template.path', APP_ROOT . '/views');
-        $cacheDir = $config->get('template.cache', APP_ROOT . '/caches');
+        $templateDir = SITE_ROOT . $config->get('config.template.path', DIRECTORY_SEPARATOR . 'views');
+        $cacheDir = SITE_ROOT . $config->get('config.template.cache', DIRECTORY_SEPARATOR .'caches');
 
-        $this->templateDir = rtrim($templateDir, '/');
-        $this->cacheDir = rtrim($cacheDir, '/');
+        $this->templateDir = rtrim($templateDir, DIRECTORY_SEPARATOR);
+        $this->cacheDir = rtrim($cacheDir, DIRECTORY_SEPARATOR);
 
         // 加载多语言
-        $langPatn = $config->get('languages');
-        $langFile = APP_ROOT . "/{$langPatn}/{$lang}.php";
+        $langPatn = $config->get('config.language');
+        $langFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPatn, $lang, ".php"]) ;
         if (file_exists($langFile)) {
             $this->translations = include $langFile;
         }

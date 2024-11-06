@@ -13,12 +13,12 @@ class Router
 {
     private static $routes = [];
     private static $groupOptions = [];
-    private static $routesPath = APP_ROOT . '/routes/';
 
     // 加载路由
     public static function loadRoutes()
     {
-        foreach (glob(self::$routesPath . '/*.php') as $file) {
+        $routesPath = implode(DIRECTORY_SEPARATOR, [SITE_ROOT, 'routes', ""]);
+        foreach (glob($routesPath . '/*.php') as $file) {
             require_once $file; // 包含路由文件
         }
     }
@@ -77,7 +77,8 @@ class Router
     // 派遣路由
     public function dispatch($method, $uri)
     {
-
+        // 只保留?前的部分，即去除参数部分
+        $uri = explode("?", $uri)[0];
         $routeExist = false;
         $method = strtoupper($method);
         // 去除结尾的斜杠以确保准确匹配
@@ -102,7 +103,7 @@ class Router
 
         if ($routeExist) {
             // 返回405 Method Not Allowed
-            $errCallback = ["Sharky\\Core\\Controller", "renderErrorPage"];
+            $errCallback = ['Sharky\\Core\\Controller', 'renderErrorPage'];
             return $this->callControllerMethod($errCallback, [
                 [
                     'code' => 405,
@@ -112,7 +113,7 @@ class Router
             ]);
         } else {
             // 没有匹配的路由，返回404
-            $errCallback = ["Sharky\\Core\\Controller", "renderErrorPage"];
+            $errCallback = ['Sharky\\Core\\Controller', 'renderErrorPage'];
             return $this->callControllerMethod($errCallback, [
                 [
                     'code' => 404,

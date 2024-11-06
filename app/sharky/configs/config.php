@@ -9,4 +9,9 @@
 
 return [
     'isdebug' => false,
+    'template' => [
+        'path' => 'views',
+        'cache' => 'cache',
+    ],
+    'language' => 'languages',
 ];

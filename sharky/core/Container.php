@@ -44,39 +44,82 @@ class Container
             $concrete = $abstract;
         }
 
-        if (!($concrete instanceof Closure)) {
-            // 驼峰命名
-            $concrete = ucwords($concrete);
-            // 如果不是完整类名添加当前命名空间
-            if (strpos($concrete, '\\') === false) {
-                $concrete = __NAMESPACE__ . '\\' . $concrete;
-            }
-            $className = $concrete;
-        } else {
-            $instance = $concrete($this, $parameters);
-            $className = get_class($instance);
-            $instance = null;
+        if (!is_array($parameters)) {
+            throw new Exception('参数必须是一个数组');
+        }
+        // 如果第二个参数传入的是数组，且第三个参数是空
+        // 那么就视为第二个参数是参数
+        if (is_array($concrete) && !empty($concrete)) {
+            $parameters = $concrete;
+            $concrete = $abstract;
         }
 
-        $this->bindings[$abstract] = ['concrete' => $concrete, 'className' => $className, 'parameters' => $parameters];
+        if (is_string($concrete)) {
+            $classInfo = $this->getClassInfo($concrete);
+            if ($classInfo['exists']) {
+                $className = $classInfo['fullName'];
+                // 自动分析构造函数参数并预设依赖
+                $autoParameters = $this->autoDetectParameters($className);
+                $parameters = array_merge($autoParameters, $parameters);
+            } else {
+                throw new Exception("无法抽象{$concrete}类");
+            }
+        } else if (!($concrete instanceof Closure)) {
+            throw new Exception('实现必须是一个类名或者是一个闭包函数');
+        }
+
+        $this->bindings[$abstract] = [
+            'concrete' => $concrete,
+            'className' => $className??"",
+            'isClosure' => $concrete instanceof Closure,
+            'parameters' => $parameters,
+        ];
+    }
+
+    // 自动检测构造函数参数
+    private function autoDetectParameters($className)
+    {
+        $parameters = [];
+        $reflector = new ReflectionClass($className);
+        $constructor = $reflector->getConstructor();
+
+        if ($constructor !== null) {
+            foreach ($constructor->getParameters() as $parameter) {
+                // 如果参数没有类型提示且没有默认值，则设为空
+                if (!$parameter->getType() && !$parameter->isDefaultValueAvailable()) {
+                    $parameters[$parameter->getName()] = null;
+                }
+            }
+        }
+
+        return $parameters;
     }
 
     // 创建类的实例，解析并注入依赖
-    public function make($abstract)
+    public function make($abstract, array $parameters = [])
     {
         if (!isset($this->bindings[$abstract])) {
-            throw new Exception("未绑定抽象类型: {$abstract}");
+            $classInfo = $this->getClassInfo($abstract);
+            if ($classInfo['exists']) {
+                $abstract = $classInfo['abstract'];
+                $concrete = $classInfo['fullName'];
+                $this->bind($abstract, $concrete);
+            } else {
+                throw new Exception("未绑定的抽象类型: {$abstract}");
+            }
         }
 
         $binding = $this->bindings[$abstract];
         $concrete = $binding['concrete'];
-        $parameters = $binding['parameters'];
+        $parameters = array_merge($binding['parameters'], $parameters);
+        
         if (isset($this->instances[$abstract])) {
             return $this->instances[$abstract];
         }
 
         if ($concrete instanceof Closure) {
             $instance = $concrete($this, $parameters);
+            $this->bindings[$abstract]['className'] = get_class($instance);
         } else {
             // 使用反射创建实例
             $reflector = new ReflectionClass($concrete);
@@ -97,13 +140,13 @@ class Container
                             $parametersToPass[] = $parameters[$parameter->getName()];
                         } else {
                             // 如果没有指定参数值，抛出异常
-                            throw new \Exception("缺少参数: " . $parameter->getName());
+                            throw new Exception("缺少参数: " . $parameter->getName());
                         }
                     } else {
                         // 如果参数指定了类型，通过容器获取对应的实例
                         $parameterTypeName = $parameterType->getName();
                         // 这里查找抽象类名对应的绑定关系
-                        $abstractForTypeName = $this->findAbstractForTypeName($parameterTypeName);
+                        $abstractForTypeName = $this->reverseBind($parameterTypeName);
                         $parametersToPass[] = $this->make($abstractForTypeName);
                     }
                 }
@@ -117,26 +160,74 @@ class Container
         return $instance;
     }
 
-    // 解析具体实现，如果是闭包则执行闭包并传入容器本身
-    private function resolve($concrete)
-    {
-        if ($concrete instanceof Closure) {
-            return $concrete($this);
-        }
-        return $concrete;
+    public function get($abstract, array $parameters = []){
+        return $this->make($abstract, $parameters);
     }
-
     // 根据实际类名查找对应的抽象类名
-    private function findAbstractForTypeName($typeName)
+    private function findAbstractForTypeName($typeName, $possible = false)
     {
+        if (is_string($possible) && isset($this->bindings[$possible]) &&
+        $this->bindings[$possible]['className'] === $typeName ){
+            return $possible;
+        }
 
         foreach ($this->bindings as $abstract => $binding) {
-            $className = $binding['className'];
-            if ($className === $typeName) {
+
+            if ($binding['isClosure'] && $binding['className'] === "" ){
+                $concrete = $binding['concrete'];
+                $parameters = $binding['parameters'];
+                $instance = $concrete($this, $parameters);
+                $this->instances[$abstract] = $instance;
+                $binding['className'] = get_class($instance);
+            }
+
+            if ($binding['className'] === $typeName) {
                 return $abstract;
             }
         }
 
         throw new Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
+    }
+    
+    private function reverseBind($typeName){
+        try {
+            $classInfo = $this->getClassInfo($typeName);
+            $abstract = $this->findAbstractForTypeName($typeName,$classInfo['abstract']);
+            return $abstract;
+        }catch (Exception $e){
+
+            $abstract = $classInfo['abstract'];
+            $concrete = $classInfo['fullName'];
+            if ($classInfo["exists"]){
+                $this->bind($abstract, $concrete);
+                return $abstract;
+            }else{
+                throw new Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
+            }
+        }
+    }
+
+    private function getClassInfo($className){
+        if (strpos($className, '\\')){
+            // 指定命名空间
+            $paths = explode("\\", $className);
+            $className_ = array_pop($paths);
+            $classInfo = [
+                "fullName" => $className,
+                "className" => $className_,
+                "nameSpace" => implode("\\",$paths),
+                "abstract" => strtolower($className_),
+            ];
+        } else {
+            // 默认命名空间
+            $classInfo = [
+                "fullName" => __NAMESPACE__."\\{$className}",
+                "className" => ucwords($className),
+                "nameSpace" => __NAMESPACE__,
+                "abstract" => strtolower($className),
+            ];
+        }
+        $classInfo['exists'] = class_exists($classInfo['fullName']);
+        return $classInfo;
     }
 }

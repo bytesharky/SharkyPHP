@@ -9,24 +9,35 @@
 
 use Sharky\Core\Container;
 use Sharky\Core\Router;
-use Sharky\Core\App;
+
+// 多站点自动加载函数
+function autoloadClasses($className)
+{
+    $paths = explode("\\", $className);
+    array_shift($paths);
+    $className = array_pop($paths);
+    $classPath = strtolower(implode(DIRECTORY_SEPARATOR, $paths));
+
+    // 将命名空间转换为路径
+    $classFile = implode(DIRECTORY_SEPARATOR, [SITE_ROOT,$classPath, $className]) . ".php";
+
+    // 如果文件存在，加载该类文件
+    if (file_exists($classFile)) {
+        require_once $classFile;
+    }
+}
+
+// 注册自动加载函数
+spl_autoload_register('autoloadClasses');
 
 // 加载路由
 Router::loadRoutes();
 
-// 创建容器
+// 获取容器
 $container = Container::getInstance();
 
-$container->bind('config');
-$container->bind('router');
-// $container->bind('app', function ($container) {
-//     return new App($container->make('router'), $container->make('config'));
-// });
+// 通过容器创建框架App
+$app = $container->make('app');
 
-// // 创建并启动框架
-// $app = $container->make('app');
-// $app->run();
-
-// 这里改为直接创建App，通过容器
-$app = new App($container->make('router'), $container->make('config'));
+// 启动框架
 $app->run();

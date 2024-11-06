@@ -14,28 +14,32 @@ use Sharky\Utils\ArrayUtils;
 class Config
 {
     private $coreConfig = SHARKY_ROOT . "/configs";
-    private $appConfig = APP_ROOT . "/configs";
+  
     private $configs = [];
 
     public function __construct()
     {
-        $this->loadConfigs();
+        $this->initConfigs();
     }
 
-    // 加载所有配置文件
-    protected function loadConfigs()
+    // 加载框架核心配置文件
+    protected function initConfigs()
     {
-        if (
-            !is_dir($this->coreConfig) &&
-            !is_dir($this->appConfig)
-        ) {
-            throw new \Exception("configs 目录不存在");
+        if (!is_dir($this->coreConfig)) {
+            throw new \Exception("核心配置目录不存在");
         }
+        $this->configs = $this->loadConfigByDir($this->coreConfig);
+    }
 
-        $coreCfgs = $this->loadConfigByDir($this->coreConfig);
-        $appCfgs = $this->loadConfigByDir($this->appConfig);
-        $mergeCfgs = ArrayUtils::deepMerge($coreCfgs, $appCfgs);
-        return $this->configs = $mergeCfgs;
+    // 加载站点配置目录
+    public function loadConfigs()
+    {
+        $siteConfig =  getSitePath()."/configs";
+        if (!is_dir($siteConfig)) {
+            throw new \Exception("站点配置目录不存在");
+        }
+        $siteConfig = $this->loadConfigByDir($siteConfig);
+        $this->configs = ArrayUtils::deepMerge($this->configs, $siteConfig);
     }
 
     // 加载指定目录的配置文件并返回数据

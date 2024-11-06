@@ -8,5 +8,6 @@
  */
 
 return [
-    'isdebug' => false,
+    'isdebug' => true,
+    'multi_site' => true
 ];

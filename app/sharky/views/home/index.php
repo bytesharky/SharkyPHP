@@ -8,7 +8,7 @@
     <style>
         body{color:#666;font-family:Arial,sans-serif;background-color:#f4f4f4;
             padding-top:50px;display:flex;flex-direction:column;align-items:center;justify-content:center;}
-        p{text-align:center;}
+        p,.nav {text-align:center;}
         h1{color:#333;font-size:36px;margin-bottom:20px}
         .logo{width:150px;height:150px;margin-bottom:30px;background-image:url(/assets/images/sharky.svg);
             background-size:cover;background-position:center;border-radius:50%;box-shadow:0 0 10px rgba(0,0,0,.2)}

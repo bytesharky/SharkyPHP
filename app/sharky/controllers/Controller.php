@@ -20,7 +20,8 @@ class Controller extends BaseController
             $template = new \Sharky\Libs\Template();
             return $template->render($name, $context);
         } else {
-            $templatePath = "{$this->templateDir}/{$name}";
+            $templateDir = $this->config->get("config.template.path");
+            $templatePath = $templateDir . DIRECTORY_SEPARATOR . $name;
             if (!file_exists($templatePath)) {
                 die("模板文件不存在: $name");
             }

@@ -12,6 +12,7 @@ namespace Sharky\Core;
 class Model
 {
     protected $tableName;
+    protected $primarys = ['id'];
     protected $db;
     protected $where = [];
     protected $currentGroup = null;
@@ -24,6 +25,8 @@ class Model
     protected $offset = null;
     protected $page = null;
     protected $pageSize = null;
+    protected $attributes = [];
+    protected $records = [];
 
     public function __construct()
     {
@@ -34,9 +37,10 @@ class Model
             $this->tableName = strtolower(str_replace('Model', '', $className));
         }
 
-        // 获取数据库实例
-        // $this->db = Container::getInstance()->make('database');
-        $this->db = new Database();
+        // 获取数据库实例(建议使用容器复用数据库连接)
+        $this->db = Container::getInstance()->make('database');
+        // $this->db = new Database();
+
         // 获取表字段
         $this->fields = $this->db->getFields($this->tableName);
     }
@@ -48,6 +52,10 @@ class Model
         }
 
         if ($this->currentGroup === null) {
+
+            // 规范where
+            $conditions = $this->normalizeWhere($conditions);
+
             // 不在分组中，直接添加到主where数组
             if (isset($conditions[0]) && !is_array($conditions[0])) {
                 $this->where[] = ['condition' => $conditions, 'operator' => $operator];
@@ -68,6 +76,45 @@ class Model
         }
 
         return $this;
+    }
+
+    protected function normalizeWhere($conditions)
+    {
+        $normalized = [];
+
+        // 单条件解析
+        if (count($conditions) === 2 && is_string($conditions[0])) {
+            // 格式：['字段名', '值']
+            $normalized[] = [$conditions[0], "=", $conditions[1]];
+
+        } elseif (count($conditions) === 3 && is_string($conditions[0]) && is_string($conditions[1])) {
+            // 格式：['字段名', '运算符', '值']
+            $normalized[] = [$conditions[0], $conditions[1], $conditions[2]];
+
+        } else {
+            // 多条件解析
+            foreach ($conditions as $key => $value) {
+                if (is_string($key)) {
+                    if (is_array($value) && count($value) === 2) {
+                        // 格式： ['字段名' => ['运算符', '值'], ...]
+                        $normalized[] = [$key, $value[0], $value[1]];
+                    } else {
+                        // 格式：['字段名' => '值', ...]
+                        $normalized[] = [$key, '=', $value];
+                    }
+
+                } elseif (is_array($value) && count($value) === 2 && is_string($value[0])) {
+                    // 格式：[['字段名', '值'], ...]
+                    $normalized[] = [$value[0], "=", $value[1]];
+
+                } elseif (is_array($value) && count($value) === 3 && is_string($value[0]) && is_string($value[1])) {
+                    // 格式：[['字段名', '运算符', '值'], ...]
+                    $normalized[] = [$value[0], $value[1], $value[2]];
+
+                }
+            }
+        }
+        return $normalized;
     }
 
     public function whereOr($conditions)
@@ -112,7 +159,9 @@ class Model
                 } else {
                     // 处理普通条件
                     $condition = $item['condition'];
-                    $whereSql .= "{$condition[0]} {$condition[1]} ?";
+                    // 允许使用整数，否过滤并加反引号                    
+                    $field = preg_match('/^\d+$/', $condition[0])? $condition[0] : $this->escapeField($condition[0]);
+                    $whereSql .= "{$field} {$condition[1]} ?";
                     $params[] = $condition[2];
                     $firstCondition = false;
                 }
@@ -132,7 +181,9 @@ class Model
             }
 
             $condition = $item['condition'];
-            $sql .= "{$condition[0]} {$condition[1]} ?";
+            // 允许使用整数，否过滤并加反引号                    
+            $field = preg_match('/^\d+$/', $condition[0])? $condition[0] : $this->escapeField($condition[0]);
+            $sql .= "{$field} {$condition[1]} ?";
             $params[] = $condition[2];
             $firstCondition = false;
         }
@@ -146,7 +197,15 @@ class Model
             $this->where(['id', '=', $id]);
         }
         $result = $this->limit(1)->select();
-        return $result ? $result[0] : null;
+        $result = $result->toArray();
+
+        if (empty($result)) {
+            return false;
+        } else {
+            $model = new static();
+            $model->attributes = $result[0];
+            return $model;
+        }
     }
 
     public function select($fields = null)
@@ -165,7 +224,18 @@ class Model
         }
 
         $this->setLastSql($sql, $params);
-        return $this->db->query($sql, $params);
+
+        $results = $this->db->query($sql, $params);
+
+        // 清空 records 并将每个记录转换为 Model 实例
+        $this->records = new Collection();
+        $baseModel = new static();
+        foreach ($results as $result) {
+            $model = clone $baseModel;
+            $model->attributes = $result;
+            $this->records->add($model);
+        }
+        return $this->records;
     }
 
     public function insert($data)
@@ -228,15 +298,53 @@ class Model
 
         list($whereSql, $whereParams) = $this->buildWhere();
         $params = array_merge($params, $whereParams);
+        if ($whereSql === "") {
+            throw new \Exception("为了安全起见，不允无条件更新");
+        }
         $sql = "UPDATE {$this->tableName} SET " . implode(',', $sets) . $whereSql;
         $this->setLastSql($sql, $params);
         return $this->db->execute($sql, $params);
     }
 
+    public function save($data = [])
+    {
+        // 过滤无效字段
+        $data = $this->filterFields($data);
+        if (empty($data)) {
+            return false;
+        }
+
+        // 根据主键生成条件
+        $wheres = [];
+        if (!empty($this->attributes)) {
+            foreach ($this->primarys as $primary) {
+                if (in_array($primary, $this->fields)) {
+                    $wheres[$primary] = $this->attributes[$primary];
+                }
+            }
+        }
+
+        // 修改模型数据
+        foreach ($data as $key => $value) {
+            $this->attributes[$key] = $value;
+        }
+
+        if (!empty($wheres)) {
+            return $this->where($wheres)->update($data);
+        } else {
+            return $this->insert($data);
+        }
+    }
+
     public function delete()
     {
         list($whereSql, $params) = $this->buildWhere();
+        if ($whereSql === "") {
+            throw new \Exception("为了安全起见，不允无条件删除");
+        }
         $sql = "DELETE FROM {$this->tableName}" . $whereSql;
+        var_dump($sql, $params);
+
         $this->setLastSql($sql, $params);
         return $this->db->execute($sql, $params);
     }
@@ -325,28 +433,6 @@ class Model
             'raw_sql' => $this->lastSql,
             'params' => $this->lastParams
         ];
-    }
-
-    public function save($data = [])
-    {
-        if (!empty($data)) {
-            foreach ($data as $key => $value) {
-                $this->$key = $value;
-            }
-        }
-
-        $data = [];
-        foreach ($this->fields as $field) {
-            if (isset($this->$field)) {
-                $data[$field] = $this->$field;
-            }
-        }
-
-        if (isset($this->id)) {
-            return $this->where(['id', '=', $this->id])->update($data);
-        } else {
-            return $this->insert($data);
-        }
     }
 
     /*
@@ -444,18 +530,35 @@ class Model
         return array_intersect_key($data, array_flip($this->fields));
     }
 
-    public function beginTransaction()
+    public function __get($name)
     {
-        return $this->db->beginTransaction();
+        return $this->attributes[$name] ?? null;
     }
 
-    public function commit()
+    public function __set($key, $value)
     {
-        return $this->db->commit();
+        $this->attributes[$key] = $value;
     }
 
-    public function rollback()
+    public function toArray()
     {
-        return $this->db->rollback();
+        return $this->attributes;
+    }
+
+    public function __debugInfo()
+    {
+        return [
+            "tableName" => $this->tableName,
+            "primarys" => $this->primarys,
+            "fields" => $this->fields,
+            "filter" => $this->filter,
+            "lastSql" => $this->lastSql,
+            "lastParams" => $this->lastParams,
+            "limit" => $this->limit,
+            "offset" => $this->offset,
+            "page " => $this->page,
+            "pageSize " => $this->pageSize,
+            "attributes" => $this->attributes,
+        ];
     }
 }

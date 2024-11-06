@@ -7,47 +7,48 @@ use Sharky\Core\Container;
 class Database
 {
     protected $connection = null;
-    protected $config;
+    protected $connectType;
     protected $pdoStatement;
 
     public function __construct()
     {
-        $this->config = Container::getInstance()->make('config')->get('database');
-        $this->connect();
+        $config = Container::getInstance()->make('config')->get('database');
+        $this->connectType = $config['connect_type'];
+        $this->connect($config);
     }
 
-    protected function connect()
+    protected function connect($config)
     {
         if ($this->connection) {
             return;
         }
 
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             $this->connection = new \mysqli(
-                $this->config['db_host'],
-                $this->config['db_user'],
-                $this->config['db_pass'],
-                $this->config['db_name'],
-                $this->config['db_port']
+                $config['db_host'],
+                $config['db_user'],
+                $config['db_pass'],
+                $config['db_name'],
+                $config['db_port']
             );
 
             if ($this->connection->connect_error) {
                 throw new \Exception("Connection failed: " . $this->connection->connect_error);
             }
 
-            $this->connection->set_charset($this->config['db_charset']);
+            $this->connection->set_charset($config['db_charset']);
         } else {
             $dsnParts = [
-                "mysql:host={$this->config['db_host']}",
-                "port={$this->config['db_port']}",
-                "dbname={$this->config['db_name']}",
-                "charset={$this->config['db_charset']}"
+                "mysql:host={$config['db_host']}",
+                "port={$config['db_port']}",
+                "dbname={$config['db_name']}",
+                "charset={$config['db_charset']}"
             ];
 
             $dsn = implode(';', $dsnParts);
 
             try {
-                $this->connection = new \PDO($dsn, $this->config['db_user'], $this->config['db_pass'], [
+                $this->connection = new \PDO($dsn, $config['db_user'], $config['db_pass'], [
                     \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
                     \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC
                 ]);
@@ -59,7 +60,7 @@ class Database
 
     public function query($sql, $params = [])
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             $stmt = $this->connection->prepare($sql);
 
             if (!empty($params)) {
@@ -81,7 +82,7 @@ class Database
 
     public function execute($sql, $params = [])
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             $stmt = $this->connection->prepare($sql);
 
             if (!empty($params)) {
@@ -99,7 +100,7 @@ class Database
 
     public function getFields($table)
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             $result = $this->connection->query("SHOW COLUMNS FROM {$table}");
             $fields = [];
 
@@ -116,7 +117,7 @@ class Database
 
     public function beginTransaction()
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             return $this->connection->begin_transaction();
         } else {
             return $this->connection->beginTransaction();
@@ -125,7 +126,7 @@ class Database
 
     public function commit()
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             return $this->connection->commit();
         } else {
             return $this->connection->commit();
@@ -134,16 +135,33 @@ class Database
 
     public function rollback()
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             return $this->connection->rollback();
         } else {
             return $this->connection->rollback();
         }
     }
 
+    public function runTransaction(callable $callBack){
+        try {
+            $this->beginTransaction();
+
+            if ($callBack($this)) {
+                $this->commit();
+                return true;
+            } else {
+                $this->rollback();
+                return false;
+            }
+        } catch (\Exception $e) {
+            $this->rollback();
+            return false;
+        }
+    }
+
     public function lastInsertId()
     {
-        if ($this->config['connect_type'] === 'mysqli') {
+        if ($this->connectType === 'mysqli') {
             return $this->connection->insert_id;
         } else {
             return $this->connection->lastInsertId();
@@ -153,7 +171,7 @@ class Database
     public function __destruct()
     {
         if ($this->connection) {
-            if ($this->config['connect_type'] === 'mysqli') {
+            if ($this->connectType === 'mysqli') {
                 $this->connection->close();
             } else {
                 $this->connection = null;
