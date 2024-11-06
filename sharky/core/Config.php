@@ -43,7 +43,7 @@ class Config
     }
 
     // 加载指定目录的配置文件并返回数据
-    protected function loadConfigByDir($directory)
+    private function loadConfigByDir($directory)
     {
         // 目录不存在时返回空数组
         if (!is_dir($directory)) {

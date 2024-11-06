@@ -23,6 +23,11 @@ class App
             $this->config = $config;
             $this->router = $router;
 
+            // 加载站点配置
+            $this->config->loadConfigs();
+            Exception::recover();
+
+
         } catch (\Exception $e) {
             die($e->getMessage());
         }

@@ -19,9 +19,6 @@
         }
     ],
     "minimum-stability": "dev",
-    "require": {
-        "twig/twig": "4.x-dev"
-    },
     "require-dev": {
         "squizlabs/php_codesniffer": "4.0.x-dev"
     },

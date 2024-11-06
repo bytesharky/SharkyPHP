@@ -11,6 +11,7 @@ namespace Sharky\Core;
 
 class Model
 {
+    protected $config;
     protected $tableName;
     protected $primarys = ['id'];
     protected $db;
@@ -43,6 +44,10 @@ class Model
 
         // 获取表字段
         $this->fields = $this->db->getFields($this->tableName);
+
+        $container = Container::getInstance();
+        $config = $container->make('config');
+        $this->config = $config;
     }
 
     public function where($conditions, $operator = 'AND')

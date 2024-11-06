@@ -14,27 +14,36 @@ class Exception extends BaseException{
         set_exception_handler(array(self::class, 'unityExceptionHandler'));
         set_error_handler(array(self::class, 'unityErrorHandler'));
 
+        self::recover();
+
+        self::$isInit = true;
+    }
+
+    // 根据配置文件重新
+    public static function recover(){
         // 加载配置
         $container = Container::getInstance();
         $config = $container->make('config');
         $isdebug = $config->get('config.isdebug', false);
 
         if ($isdebug) {
-            // 开启调试
-            ini_set('display_errors', 1);
-            ini_set('error_reporting', E_ALL);
+            self::display() ;
         } else {
-            // 恢复默认
-            // ini_restore('display_errors');
-            // ini_restore('error_reporting');
-            // 关闭错输出
-            ini_set('display_errors', 0);
-            ini_set('error_reporting', 0);
+            self::hidden() ;
         }  
-        self::$isInit = true;
     }
 
-    // 统一处理异常和错误信息
+    public static function display(){
+        ini_set('display_errors', 1);
+        ini_set('error_reporting', E_ALL);
+    }
+
+    public static function hidden(){
+        ini_set('display_errors', 0);
+        ini_set('error_reporting', 0);
+    }
+
+    // 统一处理异常信息
     public static function unityExceptionHandler($exception)
     {
         self::init();
@@ -44,7 +53,7 @@ class Exception extends BaseException{
         self::renderError($errorMessage, $traceStr);
     }
 
-    // 将[错误]转为[异常]
+    // 统一处错误常信息
     public static function unityErrorHandler($errno, $errstr, $errfile, $errline)
     {
         self::init();
@@ -67,8 +76,9 @@ class Exception extends BaseException{
     // 输出错误页面
     private static function renderError($message, $traceStr)
     {
+        http_response_code(500);
+        // 调试关闭时显示友好错误页面,否则输出详细信息
         if (!ini_get('display_errors')) {
-            // 调试关闭时显示友好错误页面
             $template = SHARKY_ROOT . '/errors/friendly.php';
         } else {
             $template = SHARKY_ROOT . '/errors/debug.php';

@@ -26,8 +26,8 @@ class Template
         $config = $container->make('config');
 
         // 视图路径和缓存路径
-        $templateDir = SITE_ROOT . $config->get('config.template.path', DIRECTORY_SEPARATOR . 'views');
-        $cacheDir = SITE_ROOT . $config->get('config.template.cache', DIRECTORY_SEPARATOR .'caches');
+        $templateDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('config.template.path', 'views');
+        $cacheDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('config.template.cache', 'caches');
 
         $this->templateDir = rtrim($templateDir, DIRECTORY_SEPARATOR);
         $this->cacheDir = rtrim($cacheDir, DIRECTORY_SEPARATOR);
@@ -57,8 +57,9 @@ class Template
 
     protected function compile($template)
     {
-        $templatePath = $this->templateDir . '/' . $template;
-        $cachePath = $this->cacheDir . '/' . md5($template) . '.php';
+        $template = preg_replace('/[\\\\\/]/',DIRECTORY_SEPARATOR, $template,);
+        $templatePath = $this->templateDir . DIRECTORY_SEPARATOR. $template;
+        $cachePath = $this->cacheDir . DIRECTORY_SEPARATOR . md5($template) . '.php';
 
         if (!file_exists($cachePath) || filemtime($cachePath) < filemtime($templatePath)) {
             if (!file_exists($templatePath)){
