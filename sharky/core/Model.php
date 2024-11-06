@@ -343,7 +343,6 @@ class Model
             throw new \Exception("为了安全起见，不允无条件删除");
         }
         $sql = "DELETE FROM {$this->tableName}" . $whereSql;
-        var_dump($sql, $params);
 
         $this->setLastSql($sql, $params);
         return $this->db->execute($sql, $params);
