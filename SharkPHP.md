@@ -122,9 +122,9 @@ project/
 
 1. ### 下载安装
 
-   * **Github**    ：<https://gihub.com/bytesharky/sharkphp>
+   * **Github**    ：<https://gihub.com/bytesharky/SharkPHP>
 
-   * **Gitee**     ：<https://gitee.com/bytesharky/sharkphp> (可能更新不同步)
+   * **Gitee**     ：<https://gitee.com/bytesharky/SharkPHP> (可能更新不同步)
 
    本框架不依赖其他第三方包，下载后需要运行`composer dump-autoload`生成自动加载类的脚本。
 
