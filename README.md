@@ -11,7 +11,7 @@ SharkyPHP 是一款独具特色的超迷你 MVC 框架。虽然在中大型项�
 
 * Author    : frogot fish <<fish@doffish.com>>
 * Demo      : <https://sharky.doffish.com/>
-* Source    : <https://github.com/bytesharky/SharkPHP>
+* Source    : </bytesharky/SharkPHP>
 
 ***
-[框架使用说明](https://github.com/bytesharky/SharkPHP/blob/main/SharkPHP.md)【待完善】
+[框架使用说明](/bytesharky/SharkPHP/blob/main/SharkPHP.md)【待完善】

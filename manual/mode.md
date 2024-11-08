@@ -97,7 +97,7 @@ foreach ($results as $result) {
 }
 ```
 
-- **返回**：该方法返回了一个填充的[集合(Container)](https://github.com/bytesharky/SharkPHP/blob/main/manual/container.md)。
+- **返回**：该方法返回了一个填充的[集合(Container)](/bytesharky/SharkPHP/blob/main/manual/container.md)。
 
 ### 6. `insert($data)` 方法
 
