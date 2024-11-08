@@ -122,7 +122,7 @@ project/
 
 1. ### 下载安装
 
-   * **Github**    ：<https://gihub.com/bytesharky/SharkPHP>
+   * **Github**    ：<https://github.com/bytesharky/SharkPHP>
 
    * **Gitee**     ：<https://gitee.com/bytesharky/SharkPHP> (可能更新不同步)
 
