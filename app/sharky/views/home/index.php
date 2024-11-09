@@ -31,7 +31,7 @@
             <a class="link" href="/about">About</a>
             <a class="link" href="/view">View</a>
             <a class="link" href="/database">Database</a>
-            <a class="link" href="https://github.com/bytesharky/sharkphp" target="_blank">Github</a>
+            <a class="link" href="https://github.com/bytesharky/SharkyPHP" target="_blank">Github</a>
         </div>
         <pre>{{ $content }}</pre>
         {% if $html??false %}
