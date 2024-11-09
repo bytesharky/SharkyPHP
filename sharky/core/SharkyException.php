@@ -1,9 +1,9 @@
 <?php
 namespace Sharky\Core;
 
-use \Exception as BaseException;
+use Exception;
 
-class Exception extends BaseException{
+class SharkyException extends Exception{
 
     private static $isInit = false;
 

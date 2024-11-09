@@ -15,40 +15,40 @@ SharkyPHP 是一款独具特色的超迷你 MVC 框架。虽然在中大型项�
  ``` text
 project/
 │
-├── public/                  // 网站根目录
-│   └── index.php            // 主入口
+├── public/                     // 网站根目录
+│   └── index.php               // 主入口
 │
-└── sharky/                  // 框架目录
-    ├── bootstrap.php        // 启动脚本
-    ├── common.php           // 全局函数
-    ├── constants.php        // 全局常量  
+└── sharky/                     // 框架目录
+    ├── bootstrap.php           // 启动脚本
+    ├── common.php              // 全局函数
+    ├── constants.php           // 全局常量  
     │ 
-    ├── core/                // 核心目录
-    │   ├── App.php          // 框架核心
-    │   ├── Collection.php   // 数据集合
-    │   ├── Config.php       // 配置管理
-    │   ├── Container.php    // 简单容器
-    │   ├── Controller.php   // 控制器基类
-    │   ├── Database.php     // 数据库管理器
-    │   ├── Exception.php    // 异常类
-    │   ├── Model.php        // 模型基类
-    │   └── Router.php       // 路由管理
+    ├── core/                   // 核心目录
+    │   ├── App.php             // 框架核心
+    │   ├── Collection.php      // 数据集合
+    │   ├── Config.php          // 配置管理
+    │   ├── Container.php       // 简单容器
+    │   ├── Controller.php      // 控制器基类
+    │   ├── Database.php        // 数据库管理器
+    │   ├── SharkyException.php // 异常类
+    │   ├── Model.php           // 模型基类
+    │   └── Router.php          // 路由管理
     │ 
-    ├── libs/                // 扩展库
-    │   ├── Cookie.php       // 状态管理器（Cookie）
-    │   ├── Session.php      // 会话管理器（Session）
-    │   ├── Template.php     // 模板类
+    ├── libs/                   // 扩展库
+    │   ├── Cookie.php          // 状态管理器（Cookie）
+    │   ├── Session.php         // 会话管理器（Session）
+    │   ├── Template.php        // 模板类
     │   └── ...
     │ 
-    ├── utils/               // 工具目录
-    │   ├── ArrayUtils.php   // 多维数组工具
-    │   └── ...
-    │
-    ├── configs/             // 配置目录(核心、公共、多站点配置必须在此处)
-    │   ├── config.php       // 配置文件
+    ├── utils/                  // 工具目录
+    │   ├── ArrayUtils.php      // 多维数组工具
     │   └── ...
     │
-    └── errors/              // 错误模板文件夹
+    ├── configs/                // 配置目录(核心、公共、多站点配置必须在此处)
+    │   ├── config.php          // 配置文件
+    │   └── ...
+    │
+    └── errors/                 // 错误模板文件夹
         ├── 404.php
         └── ...
  ```
@@ -60,28 +60,28 @@ project/
  ``` text
 project/
 │ 
-└── app/                     // 应用目录
-    ├── controllers/         // 控制器文件夹
+└── app/                        // 应用目录
+    ├── controllers/            // 控制器文件夹
     │   ├── HomeController.php
     │   └── ...
     │
-    ├── models/              // 模型文件夹
+    ├── models/                 // 模型文件夹
     │   ├── HomeModel.php
     │   └── ...
     │
-    ├── views/               // 视图文件夹
+    ├── views/                  // 视图文件夹
     │   ├── demo/
     │   │   ├── index.html
     │   │   └── ...
     │   └── ...
     │
-    ├── routes/              // 路由目录
-    │   ├── routes.php       // 路由文件
+    ├── routes/                 // 路由目录
+    │   ├── routes.php          // 路由文件
     │   └── ...
     │
-    └── config/              // 配置文件夹(自动覆盖Sharky下的配置)
-        ├── redis.php        // Redis配置文件
-        ├── database.php     // 数据库配置文件
+    └── config/                 // 配置文件夹(自动覆盖Sharky下的配置)
+        ├── redis.php           // Redis配置文件
+        ├── database.php        // 数据库配置文件
         └── ...
  ```
 
@@ -90,13 +90,13 @@ project/
  ``` text
 project/
 │ 
-└── app/                     // 应用目录
-    ├── website1/            // 控制器文件夹
-    │   ├── controllers/     // 控制器文件夹
-    │   ├── models/          // 模型文件夹
-    │   ├── views/           // 视图文件夹
-    │   ├── config/          // 配置文件夹
-    │   ├── cache/           // 缓存文件
+└── app/                        // 应用目录
+    ├── website1/               // 控制器文件夹
+    │   ├── controllers/        // 控制器文件夹
+    │   ├── models/             // 模型文件夹
+    │   ├── views/              // 视图文件夹
+    │   ├── config/             // 配置文件夹
+    │   ├── cache/              // 缓存文件
     │   └── ...
     │
     ├── website2
@@ -152,8 +152,8 @@ project/
    project/
    └── app/
       └── config/
-            ├── redis.php        // Redis配置文件
-            ├── database.php     // 数据库配置文件
+            ├── redis.php           // Redis配置文件
+            ├── database.php        // 数据库配置文件
             └── ...
       
    ```
@@ -268,6 +268,6 @@ project/
 
 11. ### 其他
 
-    [`Exception`](/manual/exception.md) 类位于 `Sharky\Core` 命名空间下，它继承自 `\Exception` 类，主要用于统一处理应用程序中的异常和错误信息。通过设置全局的异常处理函数和错误处理函数，能够根据配置文件中的调试模式设置来决定如何展示错误信息，并且在出现异常或错误时渲染相应的错误页面。
+    [`SharkyException`](/manual/exception.md) 类位于 `Sharky\Core` 命名空间下，它继承自 `\Exception` 类，主要用于统一处理应用程序中的异常和错误信息。通过设置全局的异常处理函数和错误处理函数，能够根据配置文件中的调试模式设置来决定如何展示错误信息，并且在出现异常或错误时渲染相应的错误页面。
 
     [`Array_Utils`](/manual/array_utils.md) 类位于 `Sharky\Utils` 命名空间下，是一个提供多维数组操作相关实用功能的工具类。它包含了用于深度合并数组、判断数组是否为关联数组、获取数组指定路径的值以及设置数组指定路径的值等方法，方便在处理多维数组时进行常见的操作。

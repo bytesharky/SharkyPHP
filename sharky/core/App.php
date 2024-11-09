@@ -19,13 +19,13 @@ class App
     {
         try {
             // 初始化错误捕捉
-            Exception::init();
+            SharkyException::init();
             $this->config = $config;
             $this->router = $router;
 
             // 加载站点配置
             $this->config->loadConfigs();
-            Exception::recover();
+            SharkyException::recover();
 
 
         } catch (\Exception $e) {

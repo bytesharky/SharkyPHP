@@ -32,7 +32,7 @@ function getSitePath(){
             if (!empty($sitesCfg["sites"])){
                 return APP_ROOT. DIRECTORY_SEPARATOR . reset($sitesCfg["sites"]);
             } else {
-                Sharky\Core\Exception::unityExceptionHandler(new \Exception("您已开启多站点模式，但是没有可用的站点，请检查配置文件"));
+                Sharky\Core\SharkyException::unityExceptionHandler(new \Exception("您已开启多站点模式，但是没有可用的站点，请检查配置文件"));
                 die();
             }
         }

@@ -14,15 +14,16 @@ class TwigController extends Controller
     protected $twig;
     public function __construct()
     {
-        if (class_exists('\Twig\Loader\FilesystemLoader')){
-            $loader = new \Twig\Loader\FilesystemLoader(implode(DIRECTORY_SEPARATOR,["..", "app", "sharky", "views"]));
+        if (class_exists('\Twig\Loader\FilesystemLoader')) {
+            $loader = new \Twig\Loader\FilesystemLoader(implode(DIRECTORY_SEPARATOR, ["..", "app", "sharky", "views"]));
             $this->twig = new \Twig\Environment($loader);
         } else {
-            echo ('<pre>');
-            echo ("未安装Twig模版引擎\n");
-            echo ("使用composer require twig/twig命令 安装\n");
-            echo ("使用composer remove twig/twig命令 移除\n");
-            echo ('<pre>');
+
+            $errmsg = "未安装Twig模版引擎\n" .
+                "使用composer require twig/twig命令 安装\n" .
+                "使用composer remove twig/twig命令 移除\n";
+
+            throw new \Exception("$errmsg");
         }
 
     }

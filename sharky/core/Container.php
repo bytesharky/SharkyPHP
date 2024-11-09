@@ -11,7 +11,6 @@ namespace Sharky\Core;
 
 use ReflectionClass;
 use Closure;
-use Exception;
 
 class Container
 {
@@ -45,7 +44,7 @@ class Container
         }
 
         if (!is_array($parameters)) {
-            throw new Exception('参数必须是一个数组');
+            throw new \Exception('参数必须是一个数组');
         }
         // 如果第二个参数传入的是数组，且第三个参数是空
         // 那么就视为第二个参数是参数
@@ -62,10 +61,10 @@ class Container
                 $autoParameters = $this->autoDetectParameters($className);
                 $parameters = array_merge($autoParameters, $parameters);
             } else {
-                throw new Exception("无法抽象{$concrete}类");
+                throw new \Exception("无法抽象{$concrete}类");
             }
         } else if (!($concrete instanceof Closure)) {
-            throw new Exception('实现必须是一个类名或者是一个闭包函数');
+            throw new \Exception('实现必须是一个类名或者是一个闭包函数');
         }
 
         $this->bindings[$abstract] = [
@@ -105,7 +104,7 @@ class Container
                 $concrete = $classInfo['fullName'];
                 $this->bind($abstract, $concrete);
             } else {
-                throw new Exception("未绑定的抽象类型: {$abstract}");
+                throw new \Exception("未绑定的抽象类型: {$abstract}");
             }
         }
 
@@ -140,7 +139,7 @@ class Container
                             $parametersToPass[] = $parameters[$parameter->getName()];
                         } else {
                             // 如果没有指定参数值，抛出异常
-                            throw new Exception("缺少参数: " . $parameter->getName());
+                            throw new \Exception("缺少参数: " . $parameter->getName());
                         }
                     } else {
                         // 如果参数指定了类型，通过容器获取对应的实例
@@ -186,7 +185,7 @@ class Container
             }
         }
 
-        throw new Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
+        throw new \Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
     }
     
     private function reverseBind($typeName){
@@ -194,7 +193,7 @@ class Container
             $classInfo = $this->getClassInfo($typeName);
             $abstract = $this->findAbstractForTypeName($typeName,$classInfo['abstract']);
             return $abstract;
-        }catch (Exception $e){
+        }catch (\Exception $e){
 
             $abstract = $classInfo['abstract'];
             $concrete = $classInfo['fullName'];
@@ -202,7 +201,7 @@ class Container
                 $this->bind($abstract, $concrete);
                 return $abstract;
             }else{
-                throw new Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
+                throw new \Exception("未找到与实际类名 {$typeName} 对应的抽象类名");
             }
         }
     }

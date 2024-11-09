@@ -89,6 +89,7 @@ class Database
                 $types = str_repeat('s', count($params));
                 $stmt->bind_param($types, ...$params);
             }
+            $stmt->execute();
             $affectedRows = $stmt->affected_rows;
             return $affectedRows;
         } else {
