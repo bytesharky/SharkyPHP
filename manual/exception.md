@@ -49,12 +49,12 @@ Exception::hidden();
 假设在应用程序的其他地方抛出了一个异常，该异常会被此方法处理：
 
  ``` php
-try {
-    // 可能抛出异常的代码
-    throw new Exception('这是一个测试异常');
-} catch (\Exception $e) {
-    // 异常会被全局异常处理函数捕获并由unityExceptionHandler处理
-}
+
+// 在Try块之外，运行可能抛出异常的代码
+throw new Exception('这是一个测试异常');
+
+// 异常会被全局异常处理函数捕获并由unityExceptionHandler处理
+
  ```
 
 ### 6. 统一处理错误信息（ `unityErrorHandler` 方法）
