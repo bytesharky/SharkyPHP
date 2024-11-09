@@ -93,7 +93,7 @@ protected function parse($content)
 ### 变量输出处理
 
 - 对于模板中的变量输出格式 `{{ variable }}` ，支持翻译函数的情况：
-  - 如果变量表达式符合 `__('key', {'param': 'value'})` 形式（例如`__('greeting')`），则会被解析为`<?php echo htmlspecialchars($this->translate('greeting'));?>`，即先进行翻译操作，然后对结果进行 `htmlspecialchars` 处理后输出。
+  - 如果变量表达式符合 `__('key')` 形式（例如`__('greeting')`），则会被解析为`<?php echo htmlspecialchars($this->translate('greeting'));?>`，即先进行翻译操作，然后对结果进行 `htmlspecialchars` 处理后输出。
   - 如果只是普通变量表达式（如 `{{ name }}` ），则会被解析为 `<?php echo htmlspecialchars(name);?>` ，同样进行 `htmlspecialchars` 处理后输出。
 
 ### extends指令处理
