@@ -17,7 +17,7 @@ function getSitePath(){
         $mainDomain = $sitesCfg["domain"];
         $pattern = "/.?{$mainDomain}$/";
         $domain = parse_url($_SERVER['HTTP_HOST'], PHP_URL_HOST);
-        $subDomain = preg_replace($pattern, '', $domain);
+        $subDomain = preg_replace($pattern, '', $domain??"");
 
         if (in_array($domain , array_keys($sitesCfg["sites"])) ){
             return $sitesCfg["sites"][$domain];

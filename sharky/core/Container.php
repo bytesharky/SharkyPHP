@@ -221,7 +221,7 @@ class Container
         } else {
             // 默认命名空间
             $classInfo = [
-                "fullName" => __NAMESPACE__."\\{$className}",
+                "fullName" => __NAMESPACE__."\\".ucwords($className),
                 "className" => ucwords($className),
                 "nameSpace" => __NAMESPACE__,
                 "abstract" => strtolower($className),

@@ -11,7 +11,7 @@ return [
     'isdebug' => false,
     'template' => [
         'path' => 'views',
-        'cache' => 'cache',
+        'cache' => 'caches',
     ],
     'language' => 'languages',
 ];
