@@ -11,12 +11,12 @@
 namespace Sharky\Libs;
 
 use Sharky\Core\Container;
+USE Sharky\Utils\ArrayUtils;
 
 class Template
 {
     protected $templateDir;
     protected $cacheDir;
-    protected $lang;
     protected $translations = [];
 
     public function __construct($lang = 'zh')
@@ -33,11 +33,20 @@ class Template
         $this->cacheDir = rtrim($cacheDir, DIRECTORY_SEPARATOR);
 
         // 加载多语言
-        $langPatn = $config->get('config.language');
-        $langFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPatn, $lang, ".php"]) ;
-        if (file_exists($langFile)) {
-            $this->translations = include $langFile;
+        $langPath = $config->get('config.language.path');
+        $defaultLang = $config->get('config.language.default');
+        $defaultFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $defaultLang, ".php"]) ;
+        $userFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $lang, ".php"]) ;
+        // 默认语言
+        if ($defaultFile && file_exists($defaultFile)) {
+            $defaultTranslations = include $defaultFile;
         }
+        // 用户选择语言
+        if ($userFile && file_exists($userFile)) {
+            $userTranslations = include $userFile;
+        }
+
+        $this->translations = ArrayUtils::deepMerge($defaultTranslations, $userTranslations);
     }
 
     protected function translate($key)
@@ -82,11 +91,10 @@ class Template
         // 变量输出：{{ variable }}，支持翻译函数
         $content = preg_replace_callback('/{{\s*(.+?)\s*}}/', function ($matches) {
             $expression = $matches[1];
-            if (preg_match("/__\('(.+?)'\s*,\s*(.+?)\)/", $expression, $paramMatches)) {
-                // 解析 __('key', {'param': 'value'}) 形式
+            if (preg_match("/__\('(.+?)'\s*\)/", $expression, $paramMatches)) {
+                // 解析 __('key') 形式
                 $key = $paramMatches[1];
-                $params = $paramMatches[2];
-                return "<?php echo htmlspecialchars(\$this->translate('{$key}', {$params})); ?>";
+                return "<?php echo htmlspecialchars(\$this->translate('{$key}')); ?>";
             }
             return "<?php echo htmlspecialchars({$expression}); ?>";
         }, $content);

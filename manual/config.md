@@ -2,7 +2,7 @@
 
 ## 一、概述
 
-`Config` 类位于 `Sharky\Core` 命名空间下，是框架中的配置管理器模块。它主要负责加载框架核心配置文件以及站点配置文件，并提供了根据指定路径获取配置值的功能。通过该类，可以方便地在应用程序中统一管理和获取各种配置信息。
+ `Config` 类位于 `Sharky\Core` 命名空间下，是框架中的配置管理器模块。它主要负责加载框架核心配置文件以及站点配置文件，并提供了根据指定路径获取配置值的功能。通过该类，可以方便地在应用程序中统一管理和获取各种配置信息。
 
 ## 二、类的初始化
 
@@ -28,7 +28,7 @@
 - **示例**：
 假设在配置文件中有一个数据库配置项，配置文件结构可能类似这样（以 `database.php` 为例）：
 
-```php
+ ``` php
 return [
     'host' => 'localhost',
     'port' => 3306,
@@ -36,24 +36,24 @@ return [
     'password' => 'password',
     'database' => 'your_database_name'
 ];
-```
+ ```
 
 要获取数据库的主机地址配置值，可以这样使用 `get` 方法：
 
 通常在控制器和模型中，你可以直接使用$this->config
 
-```php
+ ``` php
 
 $host = $this->config->get('database.host', 'localhost');
 echo $host; // 如果配置文件中没有设置该项，则输出默认值'localhost'
-```
+ ```
 
 或者你可以通过容器来获取
 
-```php
+ ``` php
 $container = Container::getInstance();
 $config = $container->make('config');
-```
+ ```
 
 ---
 
@@ -62,3 +62,5 @@ $config = $container->make('config');
 在使用过程中，如果您发现了任何问题或者有疑问，可以通过 new issues 的方式反馈，我们会及时处理。感谢您的理解与支持。
 
 修订：2024-11-6 22点
+
+[返回目录](/SharkPHP.md)
