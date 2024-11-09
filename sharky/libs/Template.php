@@ -38,6 +38,7 @@ class Template
         $defaultFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $defaultLang, ".php"]) ;
         $userFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $lang, ".php"]) ;
         // 默认语言
+        $defaultTranslations = [] ;
         if ($defaultFile && file_exists($defaultFile)) {
             $defaultTranslations = include $defaultFile;
         }
@@ -45,7 +46,7 @@ class Template
         if ($userFile && file_exists($userFile)) {
             $userTranslations = include $userFile;
         }
-
+        $userTranslations = [] ;
         $this->translations = ArrayUtils::deepMerge($defaultTranslations, $userTranslations);
     }
 
