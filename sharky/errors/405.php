@@ -20,7 +20,7 @@
     </style>
 </head>
 <body>
-    <h1>405 - 方法不被允许</h1>
+    <h1>405 - <?php echo($method??''); ?>方法不被允许</h1>
     <p>抱歉，您正在使用的方法对于此URL是不被允许的。</p>
     <hr>
     <div class="copyright">

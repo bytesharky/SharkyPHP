@@ -88,7 +88,11 @@ class SharkyException extends Exception{
             extract(['message' => $message, 'traceStr' => $traceStr]);
             include $template;
         } else {
-            echo ('模板文件不存在!');
+            if (!ini_get('display_errors')) {
+                echo ('<pre>遇到一个问题，请稍后再试!</pre>');            
+            } else {
+                echo ('<pre>异常跟踪模板文件不存在!</pre><pre>'. $message. '</pre><pre>'. $traceStr. '</pre>');
+            }
         }
         die();
     }

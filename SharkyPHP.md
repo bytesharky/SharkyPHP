@@ -235,24 +235,25 @@ project/
     <VirtualHost *:80>
        ServerName example.com
        ServerAlias www.example.com
-       DocumentRoot "/var/www/example.com"
-
+       AddDefaultCharset UTF-8
+       DocumentRoot /var/www/example.com
+    
        <Directory "/var/www/example.com">
-             Options Indexes FollowSymLinks
-             AllowOverride All
-             Require all granted
+          DirectoryIndex index.php
+          Options -Indexes
+          RewriteEngine On
+          RewriteCond %{REQUEST_FILENAME} !-f
+          RewriteCond %{REQUEST_FILENAME} !-d
+          RewriteRule ^(.*)$ /index.php?$1 [L,QSA]
+          LimitRequestBody 50M
+          MaxRequestWorkers 250
        </Directory>
-
-       <FilesMatch \.php$>
-             SetHandler application/x-php
+    
+       <FilesMatch "\.php$">
+          SetHandler application/x-httpd-php
+          ErrorDocument 404 /error.php
+          ErrorDocument 500 /error.php
        </FilesMatch>
-
-       RewriteEngine On
-       RewriteBase /
-
-       RewriteCond %{REQUEST_FILENAME}!-f
-       RewriteCond %{REQUEST_FILENAME}!-d
-       RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
     </VirtualHost>
     ```
 
@@ -263,7 +264,7 @@ project/
     RewriteEngine On
     RewriteCond %{REQUEST_FILENAME} !-f
     RewriteCond %{REQUEST_FILENAME} !-d
-    RewriteRule ^(.*)$ index.php?url=$1 [QSA,L]
+    RewriteRule ^(.*)$ /index.php?$1 [L,QSA]
     ````
 
 11. ### 其他

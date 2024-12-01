@@ -95,9 +95,9 @@ class Template
             if (preg_match("/__\('(.+?)'\s*\)/", $expression, $paramMatches)) {
                 // 解析 __('key') 形式
                 $key = $paramMatches[1];
-                return "<?php echo htmlspecialchars(\$this->translate('{$key}')); ?>";
+                return "<?php echo \$this->translate('{$key}'); ?>";
             }
-            return "<?php echo htmlspecialchars({$expression}); ?>";
+            return "<?php echo {$expression}; ?>";
         }, $content);
 
         // extends 指令：{% extends 'base.html' %}

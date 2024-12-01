@@ -36,9 +36,15 @@ class App
     // 启动应用
     public function run()
     {
+        // 开启缓冲区
+        ob_start();
+
         // 派发路由
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = $_SERVER['REQUEST_URI'];
-        $this->router->dispatch($method, $uri);
+        echo($this->router->dispatch($method, $uri));
+
+        // 输出并关闭缓冲区
+        ob_end_flush();
     }
 }

@@ -243,6 +243,19 @@ class Model
         return $this->records;
     }
 
+    public function first(){
+        $result = $this->limit(1)->select();
+        $result = $result->toArray();
+
+        if (empty($result)) {
+            return false;
+        } else {
+            $model = new static();
+            $model->attributes = $result[0];
+            return $model;
+        }
+    }
+
     public function insert($data)
     {
         // 过滤无效字段

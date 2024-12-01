@@ -96,29 +96,25 @@ class Router
                 ) {
                     array_shift($params);
                     // 取出匹配到的参数
-                    return $this->callControllerMethod($route['callback'], $params);
+                    $res = $this->callControllerMethod($route['callback'], $params);
+                    return $this->renderRouter($res);
                 }
             }
         }
 
         if ($routeExist) {
             // 返回405 Method Not Allowed
-            $errCallback = ['Sharky\\Core\\Controller', 'renderErrorPage'];
-            return $this->callControllerMethod($errCallback, [
-                [
-                    'code' => 405,
-                    'method' => $method,
-                    'message' => 'Method Not Allowed'
-                ]
+            return $this->renderRouter([
+                'code' => 405,
+                'status' => "fail",
+                'message' => strtoupper($method) . ' Method Not Allowed'
             ]);
         } else {
             // 没有匹配的路由，返回404
-            $errCallback = ['Sharky\\Core\\Controller', 'renderErrorPage'];
-            return $this->callControllerMethod($errCallback, [
-                [
-                    'code' => 404,
-                    'message' => 'Page Not Found'
-                ]
+            return $this->renderRouter([
+                'code' => 404,
+                'status' => "fail",
+                'message' => 'Page Not Found'
             ]);
         }
     }
@@ -128,14 +124,22 @@ class Router
     {
 
         if (is_array($callback) && is_string($callback[0])) {
-            // 实例化控制器
-            $controller = new $callback[0]();
+            // 获取控制器和方法名称
+            $controller = $callback[0];
             $method = $callback[1];
+            // 通过容器注入依赖并实例化
+            $container = Container::getInstance();
+            $instance = $container->make($controller);
             // 调用实例化后的控制器方法
-            return call_user_func_array([$controller, $method], $params);
+            return call_user_func_array([$instance, $method], $params);
         }
 
         // 如果是简单的回调函数
         return call_user_func_array($callback, $params);
+    }
+
+    private function renderRouter($res){
+        $errCallback = ['Sharky\\Core\\Controller', 'renderRouter'];
+        return $this->callControllerMethod($errCallback, [$res]);  
     }
 }

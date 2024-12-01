@@ -9,5 +9,6 @@
 
 return [
     'isdebug' => true,
-    'multi_site' => true
+    'multi_site' => true,
+    'restful' => "html"
 ];
