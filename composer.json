@@ -2,7 +2,7 @@
     "name": "sharky/sharky-php",
     "description": "Mini MVC",
     "type": "project",
-    "license": "sharky",
+    "license": "MIT",
     "autoload": {
         "psr-4": {
             "App\\Controllers\\": "app/controllers",
