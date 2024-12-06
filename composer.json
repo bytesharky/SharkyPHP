@@ -1,5 +1,6 @@
 {
     "name": "sharky/sharky-php",
+    "version": "1.0.0",
     "description": "Mini MVC",
     "type": "project",
     "license": "MIT",
@@ -18,10 +19,7 @@
             "email": "fish@doffish.com"
         }
     ],
-    "minimum-stability": "dev",
-    "require-dev": {
-        "squizlabs/php_codesniffer": "4.0.x-dev"
-    },
+    "minimum-stability": "beta",
     "scripts": {
         "lint:php": "phpcs"
     }
