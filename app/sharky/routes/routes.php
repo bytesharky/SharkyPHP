@@ -17,9 +17,10 @@ Router::reg('GET', '/', [HomeController::class, 'index']);
 Router::reg('ALL', '/about', [HomeController::class, 'about']);
 Router::reg(['GET','POST'], '/view', [HomeController::class, 'view']);
 Router::reg(['ALL','POST'], '/database', [HomeController::class, 'database']);
+Router::reg(['ALL','POST'], '/child', [HomeController::class, 'child']);
+
 /* 路由组注册实例 */
 Router::group(['prefix' => '/demo'], function () {
-
     Router::reg('GET', '/list', [DemoController::class, 'list']);
     Router::reg('GET', '/{id}', [DemoController::class, 'show']);
     Router::reg('DELETE', '/{id}', [DemoController::class, 'delete']);

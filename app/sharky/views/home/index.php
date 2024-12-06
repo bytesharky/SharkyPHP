@@ -35,7 +35,7 @@
         </div>
         <pre>{{ $content }}</pre>
         {% if $html??false %}
-        <p><a class="link" href="/demo/list">查看 Twig Demo</a></p>
+        <p><a class="link" href="/child">模板继承演示</a></p>
         {% endif %}
     </div>
     <hr>

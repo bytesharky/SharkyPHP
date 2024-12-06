@@ -58,4 +58,11 @@ class HomeController extends Controller
             "当然也可在该模型基础上自行实现，若能共享代码，我们将十分感谢。\n\n";
         $this->display('home/index.php', ['title' => 'Database', 'content' => $content]);
     }
+    
+    public function child()
+    {
+
+        $content = "这是模板继承的测试，它继承了base.html.";
+        $this->display('home/child.php', ['title' => '模板继承的测试', 'content' => $content]);
+    }
 }

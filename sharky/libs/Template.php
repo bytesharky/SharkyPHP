@@ -3,21 +3,22 @@
 /**
  * @description 微模版引擎
  * @author Sharky
- * @date 2024-11-5
- * @version 1.0.0
+ * @date 2024-12-7
+ * @version 1.1.0
  *
  */
 
 namespace Sharky\Libs;
 
 use Sharky\Core\Container;
-USE Sharky\Utils\ArrayUtils;
+use Sharky\Utils\ArrayUtils;
 
 class Template
 {
     protected $templateDir;
     protected $cacheDir;
     protected $translations = [];
+    protected $blocks = [];
 
     public function __construct($lang = 'zh')
     {
@@ -35,10 +36,10 @@ class Template
         // 加载多语言
         $langPath = $config->get('config.language.path');
         $defaultLang = $config->get('config.language.default');
-        $defaultFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $defaultLang, ".php"]) ;
-        $userFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $lang, ".php"]) ;
+        $defaultFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $defaultLang, ".php"]);
+        $userFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $lang, ".php"]);
         // 默认语言
-        $defaultTranslations = [] ;
+        $defaultTranslations = [];
         if ($defaultFile && file_exists($defaultFile)) {
             $defaultTranslations = include $defaultFile;
         }
@@ -46,7 +47,7 @@ class Template
         if ($userFile && file_exists($userFile)) {
             $userTranslations = include $userFile;
         }
-        $userTranslations = [] ;
+        $userTranslations = [];
         $this->translations = ArrayUtils::deepMerge($defaultTranslations, $userTranslations);
     }
 
@@ -62,24 +63,28 @@ class Template
         extract($variables, EXTR_OVERWRITE);
         ob_start();
         include $compiledFile;
-        return ob_get_clean();
+        $content = ob_get_clean();
+        return $content;
     }
 
-    protected function compile($template)
+    protected function compile($template, $isFather = false)
     {
-        $template = preg_replace('/[\\\\\/]/',DIRECTORY_SEPARATOR, $template,);
-        $templatePath = $this->templateDir . DIRECTORY_SEPARATOR. $template;
-        $cachePath = $this->cacheDir . DIRECTORY_SEPARATOR . md5($template) . '.php';
+        $template = preg_replace('/[\\\\\/]/', DIRECTORY_SEPARATOR, $template);
+        $templatePath = $this->templateDir . DIRECTORY_SEPARATOR . $template;
+        $cachePath = $this->cacheDir . DIRECTORY_SEPARATOR . md5($template) . ($isFather ? ".father" : "") . '.php';
 
         if (!file_exists($cachePath) || filemtime($cachePath) < filemtime($templatePath)) {
-            if (!file_exists($templatePath)){
-                new \Exception("模版文件{$templatePath}不存在");
+            if (!file_exists($templatePath)) {
+                throw new \Exception("模版文件{$templatePath}不存在");
             }
             // 创建缓存路径
-            if (!is_dir($this->cacheDir)){
-                mkdir($this->cacheDir,755, true);
+            if (!is_dir($this->cacheDir)) {
+                mkdir($this->cacheDir, 0755, true);
             }
             $content = file_get_contents($templatePath);
+            // 处理模版继承
+            $content = $this->parseExtends($content);
+            // 渲染模板
             $compiledContent = $this->parse($content);
             file_put_contents($cachePath, $compiledContent);
         }
@@ -89,7 +94,20 @@ class Template
 
     protected function parse($content)
     {
-        // 变量输出：{{ variable }}，支持翻译函数
+
+        // 渲染Block
+        $content = $this->renderBlocks($content);
+
+        // 引入其他模板
+        if (preg_match('/{%\s*include\s*[\'"](.+?)[\'"]\s*%}/', $content, $matches)) {
+            $includeTemplate = $matches[1];
+            $that = new self();
+            $compiledTemplate = $that->compile($includeTemplate);
+            $templateContent = file_get_contents($compiledTemplate);
+            $content = str_replace($matches[0], $templateContent, $content);
+        }
+
+        // 变量/常量输出，支持翻译函数
         $content = preg_replace_callback('/{{\s*(.+?)\s*}}/', function ($matches) {
             $expression = $matches[1];
             if (preg_match("/__\('(.+?)'\s*\)/", $expression, $paramMatches)) {
@@ -100,27 +118,94 @@ class Template
             return "<?php echo {$expression}; ?>";
         }, $content);
 
-        // extends 指令：{% extends 'base.html' %}
-        $content = preg_replace('/{%\s*extends\s+\'(.+?)\'\s*%}/', '<?php include $this->compile(\'$1\'); ?>', $content);
+        // 简化控制流指令正则表达式
+        $patterns = [
+            '/{%\s*if\s+(.+?)\s*%}/' => '<?php if ($1): ?>',
+            '/{%\s*elif\s+(.+?)\s*%}/' => '<?php elseif ($1): ?>',
+            '/{%\s*else\s*%}/' => '<?php else: ?>',
+            '/{%\s*endif\s*%}/' => '<?php endif; ?>',
+            '/{%\s*for\s+(\w+)\s+in\s+(.+?)\s*%}/' => '<?php foreach ($2 as $$1): ?>',
+            '/{%\s*endfor\s*%}/' => '<?php endforeach; ?>'
+        ];
 
-        // block 指令：{% block content %} ... {% endblock %}
-        $content = preg_replace('/{%\s*block\s+(.+?)\s*%}/', '<?php ob_start(); ?>', $content);
-        $content = preg_replace('/{%\s*endblock\s*%}/', '<?php echo ob_get_clean(); ?>', $content);
+        foreach ($patterns as $pattern => $replacement) {
+            $content = preg_replace($pattern, $replacement, $content);
+        }
 
-        // if 指令：{% if condition %} ... {% endif %}
-        $content = preg_replace('/{%\s*if\s+(.+?)\s*%}/', '<?php if ($1): ?>', $content);
-        $content = preg_replace('/{%\s*elif\s+(.+?)\s*%}/', '<?php elseif ($1): ?>', $content);
-        $content = preg_replace('/{%\s*else\s*%}/', '<?php else: ?>', $content);
-        $content = preg_replace('/{%\s*endif\s*%}/', '<?php endif; ?>', $content);
-
-        // for 指令：{% for item in items %} ... {% endfor %}
-        $content = preg_replace('/{%\s*for\s+(\w+)\s+in\s+(.+?)\s*%}/', '<?php foreach ($2 as $$1): ?>', $content);
-        $content = preg_replace('/{%\s*endfor\s*%}/', '<?php endforeach; ?>', $content);
+        // 移除注释
+        $content = preg_replace('/{#\s*(.+?)\s*#}/', ' ', $content);
 
         // 移除多余空白和换行符
-        $content = preg_replace('/\s+/', ' ', $content); // 替换多余空格为单个空格
-        $content = preg_replace('/>\s+</', '><', $content); // 去掉标签之间的空格和换行符
+        $content = preg_replace('/\s+/', ' ', $content);
+        $content = preg_replace('/>\s+</', '><', $content);
 
+        return (!$content || !is_string($content)) ? "" : $content;
+    }
+
+    // 处理继承模板
+    protected function parseExtends($content)
+    {
+        $extendsPattern = '/\s?{%\s*extends\s*[\'"](.+?)[\'"]\s*%}/s';
+        if (!preg_match_all($extendsPattern, $content, $allMatches)) {
+            return $content;
+        }
+        if (count($allMatches[0]) > 1) {
+            throw new \Exception('不允许存在多个extends语句');
+        }
+
+        if (!preg_match('/^' . substr($extendsPattern, 1), $content, $matches)) {
+            throw new \Exception('extends语句前不能有其他语句');
+        } else {
+            $parentCompiled = $this->compile($matches[1], true);
+            $parentContent = file_get_contents($parentCompiled);
+            // 处理 block 指令 {% block content %}... {% endblock %}
+            $this->parseBlocks($parentContent, true);
+            $content = $this->parseBlocks($content, false);
+            $content = str_replace($matches[0], $parentContent, $content);
+        }
+        return $content;
+    }
+
+    // 处理继承块
+    protected function parseBlocks($content, $isRoot)
+    {
+        $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';
+        if (preg_match_all($blockPattern, $content, $blockMatches, PREG_SET_ORDER)) {
+            $blocks = [];
+            foreach ($blockMatches as $blockMatch) {
+                $blockName = $blockMatch[1];
+                $blockContent = $blockMatch[2];
+                if (isset($blocks[$blockName])) {
+                    throw new \Exception("block名称[{$blockName}]重定义");
+                } else {
+                    $blocks[$blockName] = $blockContent;
+                }
+                $this->blocks = array_merge($this->blocks, $blocks);
+            }
+        }
+        if (!$isRoot) {
+            $content = preg_replace_callback($blockPattern, function ($matches) {
+                $blockName = $matches[1];
+                if (isset($this->blocks[$blockName])) {
+                    return "";
+                }
+                return $matches[0];
+            }, $content);
+        }
+        return $content;
+    }
+
+    // 渲染继承块
+    protected function renderBlocks($content)
+    {
+        $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';
+        $content = preg_replace_callback($blockPattern, function ($matches) {
+            $blockName = $matches[1];
+            if (isset($this->blocks[$blockName])) {
+                return $this->blocks[$blockName];
+            }
+            return $matches[0];
+        }, $content);
         return $content;
     }
 }
