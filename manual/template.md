@@ -93,18 +93,25 @@ protected function parse($content)
 ### 变量输出处理
 
 - 对于模板中的变量输出格式 `{{ variable }}` ，支持翻译函数的情况：
-  - 如果变量表达式符合 `__('key')` 形式（例如`__('greeting')`），则会被解析为`<?php echo htmlspecialchars($this->translate('greeting'));?>`，即先进行翻译操作，然后对结果进行 `htmlspecialchars` 处理后输出。
-  - 如果只是普通变量表达式（如 `{{ name }}` ），则会被解析为 `<?php echo htmlspecialchars(name);?>` ，同样进行 `htmlspecialchars` 处理后输出。
+  - 如果变量表达式符合 `__('key')` 形式（例如`__('greeting')`），则会被解析为`<?php echo $this->translate('greeting');?>`，即先进行翻译操作。
+  - 如果只是普通变量表达式（如 `{{ $name }}` ），则会被解析为 `<?php echo $name;?>` 。
 
 ### extends指令处理
 
-- 对于 `{% extends 'base.html' %}` 指令，会被解析为 `<?php include $this->compile('base.html');?>` ，即会调用自身的 `compile` 方法对被继承的模板文件（这里是 `base.html` ）进行编译并包含进来。
+- 对于 `{% extends 'base.html' %}` 指令，调用自身的 `compile` 方法对被继承的模板文件（这里是 `base.html` ）进行编译并包含进来。
 
 ### block指令处理
 
 - 对于 `{% block content %}... {% endblock %}` 指令：
-  - `{% block content %}` 会被解析为 `<?php ob_start();?>` ，开启输出缓冲。
-  - `{% endblock %}` 会被解析为 `<?php echo ob_get_clean();?>` ，获取并输出缓冲中的内容。
+  - 在多层级继承中，会依次处理父模板，子模板，孙模板...；
+  - 在同一个模板中不允许存在同名块。
+  - 如果后代中存在先辈的同名块同名块时，将覆盖先辈的同名块。
+  - 如果后代中不存在先辈的同名块同名块，将保留先辈中的块。
+  - 在最后对block做渲染
+
+### include指令处理
+
+- 对于 `{% include 'include.html' %}` 指令，创建一个新的实例，并调用 `compile` 方法对被继承的模板文件（这里是 `include.html` ）进行编译并包含进来。
 
 ### if指令处理
 
@@ -126,6 +133,6 @@ protected function parse($content)
 
 在使用过程中，如果您发现了任何问题或者有疑问，可以通过 new issues的方式反馈，我们会及时处理。感谢您的理解与支持。
 
-修订：2024-11-6 22点
+修订：2024-12-7 7点
 
 [返回目录](/SharkyPHP.md)
