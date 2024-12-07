@@ -122,6 +122,8 @@ project/
 
 1. ### 下载安装
 
+   建议使用 `composer create-project sharky/sharky-php` 命令安装，当然也可以克隆下面的仓库地址
+
    * **Github**    ：<https://github.com/bytesharky/SharkyPHP>
 
    * **Gitee**     ：<https://gitee.com/bytesharky/SharkyPHP> (可能更新不同步)
