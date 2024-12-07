@@ -22,5 +22,15 @@
     "minimum-stability": "beta",
     "scripts": {
         "lint:php": "phpcs"
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/bytesharky/SharkyPHP"
+        },
+        {
+            "type": "vcs",
+            "url": "https://gitee.com/bytesharky/SharkyPHP"
+        }
+    ]
 }
