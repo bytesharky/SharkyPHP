@@ -13,6 +13,9 @@ class Router
 {
     private static $routes = [];
     private static $groupOptions = [];
+    public const MATCH_START = 1;
+    public const MATCH_END = 2;
+    public const MATCH_FULL = 3;
 
     // 加载路由
     public static function loadRoutes()
@@ -24,7 +27,7 @@ class Router
     }
 
     // 注册路由
-    public static function reg($method, $path, $callback)
+    public static function reg($method, $path, $callback, $matchMode = -1)
     {
         // 应用分组的 prefix 和 controller 配置
         if (isset(self::$groupOptions['prefix'])) {
@@ -34,10 +37,34 @@ class Router
             $callback = [self::$groupOptions['controller'], $callback];
         }
 
+        if ($matchMode === -1) {
+            $matchMode = self::$groupOptions['matchMode'] ?? 3;
+        }
+        
+
         // 将路径格式化为正则表达式，并添加到路由表中
+        $parse = self::formatPath($path, $matchMode);
         self::$routes[] = [
             'method' => $method,
-            'path' => self::formatPath($path),
+            'path' => $parse['path'],
+            'params' => $parse['params'],
+            'callback' => $callback
+        ];
+    }
+
+    public static function prge_reg($method, $path, $callback, $params)
+    {
+        if (isset(self::$groupOptions['prefix'])) {
+            $path = self::$groupOptions['prefix'].$path;
+        }
+        if (isset(self::$groupOptions['controller']) && is_string($callback)) {
+            $callback = [self::$groupOptions['controller'], $callback];
+        }
+
+        self::$routes[] = [
+            'method' => $method,
+            'path' => $path,
+            'params' => $params,
             'callback' => $callback
         ];
     }
@@ -55,23 +82,26 @@ class Router
     }
 
     // 格式化路径
-    private static function formatPath($path)
+    private static function formatPath($path, $matchMode)
     {
-        $parts = explode('/', $path);
-        $regex = '/^';
-        $isFirst = true;
-        foreach ($parts as $part) {
-            if (strpos($part, '{') !== false && strpos($part, '}') !== false) {
-                $variable = substr($part, 1, -1);
-                $regex .= ($isFirst ? '' : '\/') . '([^\/]+)';
-                $isFirst = false;
-            } else {
-                $regex .= ($isFirst ? '' : '\/') . preg_quote($part, '/');
-                $isFirst = false;
-            }
-        }
-        $regex .= '$/';
-        return $regex;
+        $regex = ($matchMode & 1) ? '/^' : "/";
+        $params = [];
+        $result = preg_replace_callback(
+            '/\{([a-zA-Z_][\w]*)\}|[^\w]/',
+            function ($matches) use (&$params) {
+                if (isset($matches[1])) {
+                    $params[] = $matches[1];
+                    return '([^\/]+)';
+                } else {
+                    return preg_quote($matches[0], '/');
+                }
+            },
+            $path
+        );
+
+        $regex .= $result;
+        $regex .= ($matchMode & 2) ? '$/' : "/";
+        return ["path" => $regex, "params" => $params];
     }
 
     // 派遣路由
@@ -82,7 +112,7 @@ class Router
         $routeExist = false;
         $method = strtoupper($method);
         // 去除结尾的斜杠以确保准确匹配
-        $uri = ($uri != '/') ? rtrim($uri, '/') : $uri;
+        // $uri = ($uri != '/') ? rtrim($uri, '/') : $uri;
         foreach (self::$routes as $route) {
             if (preg_match($route['path'], $uri, $params)) {
                 // 找到了路由
@@ -95,8 +125,11 @@ class Router
                         in_array($method, $route['method'])))
                 ) {
                     array_shift($params);
+                    $length = count($route['params']);
+                    $params_ = array_pad(array_slice($params, 0, $length), $length, null);
+                    $params_ = array_combine($route['params'], $params_);
                     // 取出匹配到的参数
-                    $res = $this->callControllerMethod($route['callback'], $params);
+                    $res = $this->callControllerMethod($route['callback'], $params_);
                     return $this->renderRouter($res);
                 }
             }
@@ -138,8 +171,9 @@ class Router
         return call_user_func_array($callback, $params);
     }
 
-    private function renderRouter($res){
+    private function renderRouter($res)
+    {
         $errCallback = ['Sharky\\Core\\Controller', 'renderRouter'];
-        return $this->callControllerMethod($errCallback, [$res]);  
+        return $this->callControllerMethod($errCallback, [$res]);
     }
 }
