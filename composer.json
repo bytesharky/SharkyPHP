@@ -1,5 +1,6 @@
 {
     "name": "sharky/sharky-php",
+    "version": "0.0.2",
     "description": "Mini MVC",
     "type": "project",
     "license": "MIT",
@@ -18,11 +19,18 @@
             "email": "fish@doffish.com"
         }
     ],
-    "minimum-stability": "dev",
-    "require-dev": {
-        "squizlabs/php_codesniffer": "4.0.x-dev"
-    },
+    "minimum-stability": "beta",
     "scripts": {
         "lint:php": "phpcs"
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/bytesharky/SharkyPHP"
+        },
+        {
+            "type": "vcs",
+            "url": "https://gitee.com/bytesharky/SharkyPHP"
+        }
+    ]
 }
