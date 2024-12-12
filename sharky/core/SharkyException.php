@@ -76,6 +76,8 @@ class SharkyException extends Exception{
     // 输出错误页面
     private static function renderError($message, $traceStr)
     {
+        // 清空缓冲，以免之前的输出破坏错误页面
+        ob_clean();
         http_response_code(500);
         // 调试关闭时显示友好错误页面,否则输出详细信息
         if (!ini_get('display_errors')) {

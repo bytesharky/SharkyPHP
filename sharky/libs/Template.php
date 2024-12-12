@@ -33,21 +33,33 @@ class Template
         $this->templateDir = rtrim($templateDir, DIRECTORY_SEPARATOR);
         $this->cacheDir = rtrim($cacheDir, DIRECTORY_SEPARATOR);
 
+        // 设置多语言
+        $this->setLanguage($lang);
+    }
+
+    public function setLanguage($lang){
+        if (!$lang){
+            return;
+        }
+        // 加载配置文件
+        $container = Container::getInstance();
+        $config = $container->make('config');
         // 加载多语言
         $langPath = $config->get('config.language.path');
         $defaultLang = $config->get('config.language.default');
-        $defaultFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $defaultLang, ".php"]);
-        $userFile = implode(DIRECTORY_SEPARATOR, ["", SITE_ROOT, $langPath, $lang, ".php"]);
+        $defaultFile = implode(DIRECTORY_SEPARATOR, [SITE_ROOT, $langPath, $defaultLang.".php"]);
+        $userFile = implode(DIRECTORY_SEPARATOR, [SITE_ROOT, $langPath, $lang.".php"]);
         // 默认语言
         $defaultTranslations = [];
         if ($defaultFile && file_exists($defaultFile)) {
             $defaultTranslations = include $defaultFile;
         }
         // 用户选择语言
+        $userTranslations = [];
         if ($userFile && file_exists($userFile)) {
             $userTranslations = include $userFile;
         }
-        $userTranslations = [];
+
         $this->translations = ArrayUtils::deepMerge($defaultTranslations, $userTranslations);
     }
 
@@ -110,12 +122,20 @@ class Template
         // 变量/常量输出，支持翻译函数
         $content = preg_replace_callback('/{{\s*(.+?)\s*}}/', function ($matches) {
             $expression = $matches[1];
-            if (preg_match("/__\('(.+?)'\s*\)/", $expression, $paramMatches)) {
+
+            if (preg_match('/__\(\s*[\'"](.+?)[\'"]\s*\)/', $expression, $paramMatches)) {
                 // 解析 __('key') 形式
                 $key = $paramMatches[1];
                 return "<?php echo \$this->translate('{$key}'); ?>";
+            } else if (preg_match('/__\(\s*(.+?)\s*\)/', $expression, $paramMatches)) {
+                // 解析 __(key) 形式
+                $key = $paramMatches[1];
+                $key = $this->getExpression($key);
+                return "<?php echo \$this->translate({$key}); ?>";
+            } else {
+                $expression = $this->getExpression($expression);
+                return "<?php echo {$expression}; ?>";
             }
-            return "<?php echo {$expression}; ?>";
         }, $content);
 
         // 简化控制流指令正则表达式
@@ -124,7 +144,7 @@ class Template
             '/{%\s*elif\s+(.+?)\s*%}/' => '<?php elseif ($1): ?>',
             '/{%\s*else\s*%}/' => '<?php else: ?>',
             '/{%\s*endif\s*%}/' => '<?php endif; ?>',
-            '/{%\s*for\s+(\w+)\s+in\s+(.+?)\s*%}/' => '<?php foreach ($2 as $$1): ?>',
+            '/{%\s*for\s+(.+)\s+in\s+(.+?)\s*%}/' => '<?php foreach ($2 as $1): ?>',
             '/{%\s*endfor\s*%}/' => '<?php endforeach; ?>'
         ];
 
@@ -132,21 +152,48 @@ class Template
             $content = preg_replace($pattern, $replacement, $content);
         }
 
-        // 移除注释
-        $content = preg_replace('/{#\s*(.+?)\s*#}/', ' ', $content);
+        $content = $this->compressHtml($content);
+
+        return (!$content || !is_string($content)) ? "" : $content;
+    }
+
+    function compressHtml($content)
+    {
+        // 移除模板注释
+        $content = preg_replace('/{#\s*(.+?)\s*#}/s', ' ', $content);
+
+        // 移除HTML中的普通注释
+        $content = preg_replace('/<!--(?!\[if\s).*?-->/s', '', $content);
+        
+        // 移除JavaScript块和style块中的单行注释和多行注释
+        $content = preg_replace_callback('/<(script|style).*?>(.+?)<\/(script|style)>/s', function ($match) {
+            $jscript = $match[0] . "\n";
+            $jscript = preg_replace('/\/\/.*?\n/', '', $jscript);
+            return preg_replace('/\/\*[\s\S]*?\*\//', '', $jscript);
+        }, $content);
 
         // 移除多余空白和换行符
         $content = preg_replace('/\s+/', ' ', $content);
         $content = preg_replace('/>\s+</', '><', $content);
 
-        return (!$content || !is_string($content)) ? "" : $content;
+        return $content;
     }
 
-    // 处理继承模板
+    protected function getExpression($expression)
+    {
+        return preg_replace_callback('/^\s*(.+?)(\?\?)?\s*$/', function ($paramMatches) {
+            $key = $paramMatches[1];
+            $key = defined($key) ? $key : "\$$key";
+            $key = (isset($paramMatches[2]) && $paramMatches[2] === "??") ? $key . "??" . "\"\"" : $key;
+            return $key;
+        }, $expression);
+    }
+
     protected function parseExtends($content)
     {
         $extendsPattern = '/\s?{%\s*extends\s*[\'"](.+?)[\'"]\s*%}/s';
         if (!preg_match_all($extendsPattern, $content, $allMatches)) {
+            // $this->parseBlocks($content, true);
             return $content;
         }
         if (count($allMatches[0]) > 1) {
@@ -166,7 +213,6 @@ class Template
         return $content;
     }
 
-    // 处理继承块
     protected function parseBlocks($content, $isRoot)
     {
         $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';
@@ -195,7 +241,6 @@ class Template
         return $content;
     }
 
-    // 渲染继承块
     protected function renderBlocks($content)
     {
         $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';

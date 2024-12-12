@@ -30,39 +30,44 @@ class Controller
         $restful = $this->config->get('config.restful', "");
         if (is_array($response) || is_string($response)) {
             $json = $response;
-        }else if (is_int($response)) {
-            $json = $this->fetchStatusJson($response); 
-        }else if (is_null($response)){ 
+        } else if (is_int($response)) {
+            $json = $this->fetchStatusJson($response);
+        } else if (is_null($response)) {
             $json = "";
-        }else if (is_bool($response) && $response){       
-            $json = $this->fetchStatusJson(200); 
-        }else{
+        } else if (is_bool($response) && $response) {
+            $json = $this->fetchStatusJson(200);
+        } else {
             $json = [
-                'code'=> 500,
+                'code' => 500,
                 'status' => 'Server Error',
-                'message'=> 'Internal Server Error',
+                'message' => 'Internal Server Error',
             ];
         }
-        
-        $code = $json['code']??200;
 
+        $code = intval($json['code']??200);
         http_response_code($code);
 
+        if (is_array($json)) {
+            $errMsg = $this->fetchStatusJson($code);
+            $json['message'] = $json['message'] ?? $errMsg["message"];
+            $json['status'] = $json['status'] ?? $errMsg["status"];
+        }
+        
         if ($code == 200) {
-            if (is_array($json)){
-                return(json_encode($json));
-            }else{
-                return($json);
+            if (is_array($json)) {
+                return (json_encode($json));
+            } else {
+                return ($json);
             }
-        } else{
-            if (in_array($code,[301,302,303,307,308])) {
+        } else {
+            if (in_array($code, [301, 302, 303, 307, 308])) {
                 if (array_key_exists('Location', $json)) {
-                    header('Location: '. $json['Location']);
+                    header('Location: ' . $json['Location']);
                 }
             }
             if (strtolower($restful) === "json") {
                 return (json_encode($json));
-            }else{
+            } else {
                 $errorTemplatePath = SHARKY_ROOT . '/errors/';
                 $errorFile = $errorTemplatePath . "{$code}.php";
                 if (file_exists($errorFile)) {
@@ -71,14 +76,16 @@ class Controller
                     include $errorFile;
                     return ob_get_clean();
                 } else {
-                    $message = $json['message']??'Unknown Error';
-                    return ("{$code} Error - {$message}");
+                    $status = $json['status'] ?? 'Unknown Status';
+                    $message = $json['message'] ?? 'Unknown Error';
+                    return ("{$status}: {$code} - {$message}");
                 }
             }
         }
     }
 
-    private function fetchStatusJson($statusCode) {
+    private function fetchStatusJson($statusCode)
+    {
         $statusMessages = [
             100 => "Continue",
             101 => "Switching Protocols",
@@ -122,7 +129,7 @@ class Controller
             504 => "Gateway Time-out",
             505 => "Version Not Supported"
         ];
-    
+
         $status = '';
         if ($statusCode >= 100 && $statusCode < 200) {
             $status = 'Informational';
@@ -135,11 +142,11 @@ class Controller
         } elseif ($statusCode >= 500 && $statusCode < 600) {
             $status = 'Server Error';
         }
-    
+
         $data = [
             'code' => $statusCode,
             'status' => $status,
-            'message' => isset($statusMessages[$statusCode])? $statusMessages[$statusCode] : 'Unknown status code'
+            'message' => isset($statusMessages[$statusCode]) ? $statusMessages[$statusCode] : 'Unknown Error'
         ];
         return $data;
     }
