@@ -15,13 +15,16 @@ class Controller
     protected $project = "SharkyPHP";
     protected $version = "1.0.0";
     protected $error;
+    protected $request;
 
     // 初始化
     public function __construct()
     {
         $container = Container::getInstance();
         $config = $container->make('config');
+        $request = $container->make('request');
         $this->config = $config;
+        $this->request = $request;
     }
 
     // 渲染路由页面

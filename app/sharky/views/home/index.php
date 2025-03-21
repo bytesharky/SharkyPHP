@@ -23,17 +23,18 @@
 
 <body>
     <div class="logo"></div>
-    <h1>{{ $title }}</h1>
+    <h1>{{ title }}</h1>
     <h2>欢迎使用SharkyPHP</h2>
     <div class="content">
         <div class="nav">
-            <a class="link" href="/">Index</a>
-            <a class="link" href="/about">About</a>
-            <a class="link" href="/view">View</a>
-            <a class="link" href="/database">Database</a>
+            <a class="link" href="/">首页</a>
+            <a class="link" href="/view">视图</a>
+            <a class="link" href="/database">数据库</a>
+            <a class="link" href="/auth">中间件</a>
+            <a class="link" href="https://gitee.com/bytesharky/SharkyPHP" target="_blank">Gitee</a>
             <a class="link" href="https://github.com/bytesharky/SharkyPHP" target="_blank">Github</a>
         </div>
-        <pre>{{ $content }}</pre>
+        <pre>{{ content }}</pre>
         {% if $html??false %}
         <p><a class="link" href="/child">模板继承演示</a></p>
         {% endif %}

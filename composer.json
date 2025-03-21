@@ -6,8 +6,10 @@
     "license": "MIT",
     "autoload": {
         "psr-4": {
-            "App\\Controllers\\": "app/controllers",
+            "App\\Libs\\": "app/libs",
             "App\\Models\\": "app/models",
+            "App\\Middleware\\": "app/middleware",
+            "App\\Controllers\\": "app/controllers",
             "Sharky\\Core\\": "sharky/core",
             "Sharky\\Libs\\": "sharky/libs",
             "Sharky\\Utils\\": "sharky/utils"

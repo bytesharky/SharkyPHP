@@ -18,6 +18,14 @@ class Model extends BaseModel
 {
     protected $tableName;
 
+    public function orderBy($columns) {
+        return parent::orderBy($columns);
+    }
+
+    public function groupBy($columns) {
+        return parent::groupBy($columns);
+    }
+
     public function where($conditions, $operator = 'AND')
     {
         return parent::where($conditions, $operator);
