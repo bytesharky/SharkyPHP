@@ -63,7 +63,7 @@ class Template
         $this->translations = ArrayUtils::deepMerge($defaultTranslations, $userTranslations);
     }
 
-    protected function translate($key)
+    public function translate($key)
     {
         // 返回翻译文本，若没有则返回原键
         return $this->translations[$key] ?? $key;

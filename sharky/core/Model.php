@@ -16,6 +16,8 @@ class Model
     protected $primarys = ['id'];
     protected $db;
     protected $where = [];
+    protected $groupByColumns = [];
+    protected $orderByConditions = [];
     protected $currentGroup = null;
     protected $groups = [];
     protected $fields = [];
@@ -48,6 +50,30 @@ class Model
         $container = Container::getInstance();
         $config = $container->make('config');
         $this->config = $config;
+    }
+
+    public function orderBy($columns) {
+        if (is_string($columns)) {
+            $this->orderByConditions[] = $columns;
+        } elseif (is_array($columns)) {
+            foreach ($columns as $column => $direction) {
+                if (is_numeric($column)) {
+                    $this->orderByConditions[] = $direction;
+                } else {
+                    $this->orderByConditions[] = "$column $direction";
+                }
+            }
+        }
+        return $this;
+    }
+
+    public function groupBy($columns) {
+        if (is_string($columns)) {
+            $this->groupByColumns[] = $columns;
+        } elseif (is_array($columns)) {
+            $this->groupByColumns = array_merge($this->groupByColumns, $columns);
+        }
+        return $this;
     }
 
     public function where($conditions, $operator = 'AND')
@@ -88,7 +114,7 @@ class Model
         $normalized = [];
 
         // 单条件解析
-        if (count($conditions) === 2 && is_string($conditions[0])) {
+        if (count($conditions) === 2 && isset($conditions[0]) && is_string($conditions[0])) {
             // 格式：['字段名', '值']
             $normalized[] = [$conditions[0], "=", $conditions[1]];
 
@@ -218,8 +244,17 @@ class Model
         // 构建SQL
         $fields = ($fields !== null) ? $fields : $this->filter;
         $fieldsSql = $this->buildFields($fields);
+        
         list($whereSql, $params) = $this->buildWhere();
         $sql = "SELECT {$fieldsSql} FROM {$this->tableName}" . $whereSql;
+
+        if (!empty($this->groupByColumns)) {
+            $sql .= " GROUP BY ". implode(', ', $this->groupByColumns);
+        }
+        if (!empty($this->orderByConditions)) {
+            $sql .= " ORDER BY ". implode(', ', $this->orderByConditions);
+        }
+
         // 添加 LIMIT 和 OFFSET
         if ($this->limit !== null && $this->limit > 0) {
             $sql .= " LIMIT " . $this->limit;
@@ -485,14 +520,15 @@ class Model
         $list = $this->select($fields);
         $pageInfo = [
             'total' => $total,
-            'data' => $list
+            'data' => $list->toArray()
         ];
         // 如果是使用page()方法设置的分页
         if ($this->page !== null) {
+            $total_pages = ceil($total / $this->pageSize);
             $pageInfo = array_merge($pageInfo, [
-                'current_page' => $this->page,
+                'current_page' => min($this->page, $total_pages),
                 'page_size' => $this->pageSize,
-                'total_pages' => ceil($total / $this->pageSize),
+                'total_pages' => $total_pages,
                 'has_more' => ($this->page * $this->pageSize) < $total
             ]);
         }

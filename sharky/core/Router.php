@@ -8,6 +8,7 @@
  */
 
 namespace Sharky\Core;
+use Sharky\Core\RouteNotFoundException;
 
 class Router
 {
@@ -52,7 +53,7 @@ class Router
         ];
     }
 
-    public static function prge_reg($method, $path, $callback, $params)
+    public static function preg_reg($method, $path, $callback, $params)
     {
         if (isset(self::$groupOptions['prefix'])) {
             $path = self::$groupOptions['prefix'].$path;
@@ -143,6 +144,12 @@ class Router
                 'message' => strtoupper($method) . ' Method Not Allowed'
             ]);
         } else {
+            $container = Container::getInstance();
+            $config = $container->make('config');
+            $isDebug = $config->get('config.isdebug', false);
+            if ($isDebug){
+                throw new RouteNotFoundException("Route Not Found\n\n没有找到匹配的路由!\n\n$uri");
+            }
             // 没有匹配的路由，返回404
             return $this->renderRouter([
                 'code' => 404,
@@ -173,7 +180,7 @@ class Router
 
     private function renderRouter($res)
     {
-        $errCallback = ['Sharky\\Core\\Controller', 'renderRouter'];
-        return $this->callControllerMethod($errCallback, [$res]);
+        $renderRouter = ['Sharky\\Core\\Controller', 'renderRouter'];
+        return $this->callControllerMethod($renderRouter, [$res]);
     }
 }

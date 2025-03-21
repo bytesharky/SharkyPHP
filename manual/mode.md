@@ -30,7 +30,7 @@
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass(); 
+$model = new YourModel(); 
 $model->where(['name', '=', 'John'])->where(['age', '>', '18']);
 // 以上代码构建了查询条件：WHERE name = 'John' AND age > '18'
  ```
@@ -41,7 +41,7 @@ $model->where(['name', '=', 'John'])->where(['age', '>', '18']);
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $model->whereOr(['name', '=', 'John'])->whereOr(['name', '=', 'Jane']);
 // 构建的查询条件为：WHERE name = 'John' OR name = 'Jane'
  ```
@@ -52,7 +52,7 @@ $model->whereOr(['name', '=', 'John'])->whereOr(['name', '=', 'Jane']);
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $model->beginGroup('AND')
       ->where(['age', '>', '18'])
       ->where(['gender', '=', 'male'])
@@ -67,7 +67,7 @@ $model->beginGroup('AND')
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 查找id为1的记录
 $result = $model->find(1);
 if ($result) {
@@ -86,7 +86,7 @@ if ($result) {
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 查询所有字段的记录
 $results = $model->select();
 // 只查询name和age字段的记录
@@ -105,7 +105,7 @@ foreach ($results as $result) {
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 单条插入数据
 $data = ['name' => 'John', 'age' => 25];
 $model->insert($data);
@@ -124,7 +124,7 @@ $model->insert($data);
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $model->where(['id', '=', 1])
       ->update(['name' => 'New Name', 'age' => 26]);
  ```
@@ -135,13 +135,13 @@ $model->where(['id', '=', 1])
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 假设已经查询到一条记录并赋值给$model，现在修改记录并保存
 $model->name = 'Updated Name';
 $model->save();
 
 // 插入一条新记录
-$newModel = new YourModelSubclass();
+$newModel = new YourModel();
 $newModel->name = 'New Record Name';
 $newModel->save();
  ```
@@ -152,7 +152,7 @@ $newModel->save();
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $model->where(['id', '=', 1])
       ->delete();
  ```
@@ -163,7 +163,7 @@ $model->where(['id', '=', 1])
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 设置查询特定字段
 $model->fields('name,age');
 // 重置为查询所有字段
@@ -176,7 +176,7 @@ $model->fields('');
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 设置分页参数并执行分页查询
 $model->page(2, 10);
 $pageInfo = $model->paginate();
@@ -189,7 +189,7 @@ echo "当前页：". $pageInfo['current_page']. ", 每页数量：". $pageInfo['
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 // 限制查询结果只返回前5条记录
 $model->limit(5);
 // 从第10条记录开始，返回接下来的5条记录
@@ -202,7 +202,7 @@ $model->limit(5, 10);
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $count = $model->count();
 echo "符合条件的记录数量：". $count;
  ```
@@ -213,12 +213,74 @@ echo "符合条件的记录数量：". $count;
 - **示例**：
 
  ``` php
-$model = new YourModelSubclass();
+$model = new YourModel();
 $model->where(['name', '=', 'John'])
       ->select();
 $lastSqlInfo = $model->getLastSql();
-print_r($lastSqlInfo);
  ```
+
+### 14. `orderBy` 方法
+
+- **功能** `orderBy` 方法用于对查询结果进行排序，它支持多次调用以添加多个排序条件，也支持一次传入多个字段及其排序方向。可以传入字符串或者数组来指定排序规则。
+
+  当传入字符串时，字符串应包含列名和排序方向，例如 `'column_name DESC'`。
+
+  当传入数组时，既可以是关联数组 `['column1' => 'ASC', 'column2' => 'DESC']`，也可以是索引数组 `['column1 ASC', 'column2 DESC']`。
+
+- **示例**
+
+```php
+// 创建 YourModel 实例
+$model = new YourModel();
+
+// 示例 1: 一次指定一个排序条件，使用字符串
+$result = $model
+        ->where('age', '>', 20)
+        ->orderBy('age DESC')
+        ->select();
+
+// 示例 2: 多次调用 orderBy 添加多个排序条件
+$result = $model
+        ->where('age', '>', 20)
+        ->orderBy('age DESC')
+        ->orderBy('name ASC')
+        ->select();
+
+// 示例 3: 一次传入多个字段排序，使用关联数组
+$result = $model
+        ->where('age', '>', 20)
+        ->orderBy(['age' => 'DESC', 'name' => 'ASC'])
+        ->select();
+
+// 示例 4: 一次传入多个字段排序，使用索引数组
+$result = $model
+          ->where('age', '>', 20)
+          ->orderBy(['age DESC', 'name ASC'])
+          ->select();
+```
+
+### 15. `groupBy` 方法
+
+- **功能** `groupBy` 方法用于对查询结果进行分组，它支持传入单个列名（字符串形式）或多个列名（数组形式），将查询结果按照指定的列进行分组。
+
+- **示例**
+
+```php
+// 创建 YourModel 实例
+$model = new YourModel();
+
+// 示例 1: 按单个列分组，使用字符串
+$result1 = $model
+          ->where('age', '>', 20)
+          ->groupBy('country')
+          ->select();
+
+// 示例 2: 按多个列分组，使用数组
+$result2 = $model
+          ->where('age', '>', 20)
+          ->groupBy(['country', 'city'])
+          ->select();
+```
 
 ## 四、注意事项
 
