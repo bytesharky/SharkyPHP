@@ -183,10 +183,12 @@ class Router
                     $params_ = array_combine($route->params, $params_);
                     
                     // 创建请求上下文
-                    $request = Container::getInstance()->make('request');
-                    $request->params = $params_;
-                    $request->uri = $uri;
-                    $request->method = $method;
+                    $request = Container::getInstance()->make('request', [
+                        'params' => $params_,
+                        'uri' => $uri,
+                        'method' => $method
+                    ]);
+
                     
                     // 执行中间件链
                     $result = $this->runMiddlewareChain($route->middleware, $request, function($request) use ($route) {

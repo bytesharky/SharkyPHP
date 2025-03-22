@@ -12,11 +12,17 @@ namespace Sharky\Core;
 // 
 class Request
 {
-    public $params = [];
-    public $uri = '';
-    public $method = '';
-    public $attributes = [];
+    readonly public array $params;
+    readonly public string $uri;
+    readonly public string $method;
+    private $attributes = [];
     
+    public function __construct($params, $uri, $method){
+        $this->params = $params;
+        $this->uri = $uri;
+        $this->method = $method;
+    }
+
     public function __get($name)
     {
         return $this->attributes[$name] ?? null;
