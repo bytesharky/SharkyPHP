@@ -1,8 +1,15 @@
 <?php
+
+/**
+ * @description 异常类
+ * @author Sharky
+ * @date 2025-3-22
+ * @version 1.1.0
+ */
+
 namespace Sharky\Core;
 
 use Exception;
-use Sharky\Core\Router;
 
 class RouteNotFoundException extends SharkyException{}
 class SharkyException extends Exception{

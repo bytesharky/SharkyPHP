@@ -3,8 +3,8 @@
 /**
  * @description 微模版引擎
  * @author Sharky
- * @date 2024-12-7
- * @version 1.1.0
+ * @date 2025-3-22
+ * @version 1.1.1
  *
  */
 
@@ -19,12 +19,14 @@ class Template
     protected $cacheDir;
     protected $translations = [];
     protected $blocks = [];
+    protected $isDebug = false;
 
     public function __construct($lang = 'zh')
     {
         // 加载配置文件
         $container = Container::getInstance();
         $config = $container->make('config');
+        $this->isDebug = $config->get('config.isdebug', false);
 
         // 视图路径和缓存路径
         $templateDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('config.template.path', 'views');
@@ -79,13 +81,24 @@ class Template
         return $content;
     }
 
-    protected function compile($template, $isFather = false)
+    protected function compile($template, $isParse = true)
     {
         $template = preg_replace('/[\\\\\/]/', DIRECTORY_SEPARATOR, $template);
         $templatePath = $this->templateDir . DIRECTORY_SEPARATOR . $template;
-        $cachePath = $this->cacheDir . DIRECTORY_SEPARATOR . md5($template) . ($isFather ? ".father" : "") . '.php';
+        $cachePath = $this->cacheDir . DIRECTORY_SEPARATOR;
+        $cacheFile = $cachePath . md5($template) . '.php';
+        
+        if ($this->isDebug){
+            $timestamp = time();
+            $sixDigitNumber = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
+            $combinedString = $timestamp . $sixDigitNumber;
 
-        if (!file_exists($cachePath) || filemtime($cachePath) < filemtime($templatePath)) {
+            $cacheFile = $cachePath . str_replace("\\", "-", $template) . md5($combinedString) . '.php';
+        }
+
+        if ($this->isDebug || 
+            !file_exists($cacheFile) || 
+            filemtime($cacheFile) < filemtime($templatePath)) {
             if (!file_exists($templatePath)) {
                 throw new \Exception("模版文件{$templatePath}不存在");
             }
@@ -96,12 +109,14 @@ class Template
             $content = file_get_contents($templatePath);
             // 处理模版继承
             $content = $this->parseExtends($content);
-            // 渲染模板
-            $compiledContent = $this->parse($content);
-            file_put_contents($cachePath, $compiledContent);
+            // 解析模板
+            if ($isParse){
+                $content = $this->parse($content);
+            }
+            file_put_contents($cacheFile, $content);
         }
 
-        return $cachePath;
+        return $cacheFile;
     }
 
     protected function parse($content)
@@ -193,9 +208,9 @@ class Template
     {
         $extendsPattern = '/\s?{%\s*extends\s*[\'"](.+?)[\'"]\s*%}/s';
         if (!preg_match_all($extendsPattern, $content, $allMatches)) {
-            // $this->parseBlocks($content, true);
             return $content;
         }
+
         if (count($allMatches[0]) > 1) {
             throw new \Exception('不允许存在多个extends语句');
         }
@@ -203,17 +218,19 @@ class Template
         if (!preg_match('/^' . substr($extendsPattern, 1), $content, $matches)) {
             throw new \Exception('extends语句前不能有其他语句');
         } else {
-            $parentCompiled = $this->compile($matches[1], true);
+            $parentCompiled = $this->compile($matches[1], false);
             $parentContent = file_get_contents($parentCompiled);
             // 处理 block 指令 {% block content %}... {% endblock %}
-            $this->parseBlocks($parentContent, true);
-            $content = $this->parseBlocks($content, false);
+            $this->parseBlocks($parentContent);
+            $content = $this->parseBlocks($content);
             $content = str_replace($matches[0], $parentContent, $content);
+            $content = $this->parseRenderBlocks($content);
         }
+        
         return $content;
     }
 
-    protected function parseBlocks($content, $isRoot)
+    protected function parseBlocks($content)
     {
         $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';
         if (preg_match_all($blockPattern, $content, $blockMatches, PREG_SET_ORDER)) {
@@ -226,19 +243,18 @@ class Template
                 } else {
                     $blocks[$blockName] = $blockContent;
                 }
-                $this->blocks = array_merge($this->blocks, $blocks);
             }
+            $this->blocks = array_merge($this->blocks, $blocks);
         }
-        if (!$isRoot) {
-            $content = preg_replace_callback($blockPattern, function ($matches) {
-                $blockName = $matches[1];
-                if (isset($this->blocks[$blockName])) {
-                    return "";
-                }
-                return $matches[0];
-            }, $content);
-        }
-        return $content;
+
+
+        return preg_replace_callback($blockPattern, function ($matches) {
+            $blockName = $matches[1];
+            if (isset($this->blocks[$blockName])) {
+                return "";
+            }
+            return $matches[0];
+        }, $content);
     }
 
     protected function renderBlocks($content)
@@ -248,6 +264,19 @@ class Template
             $blockName = $matches[1];
             if (isset($this->blocks[$blockName])) {
                 return $this->blocks[$blockName];
+            }
+            return $matches[0];
+        }, $content);
+        return $content;
+    }
+
+    protected function parseRenderBlocks($content)
+    {
+        $blockPattern = '/{%\s*block\s*(.+?)\s*%}(.*?){%\s*endblock\s*%}/s';
+        $content = preg_replace_callback($blockPattern, function ($matches) {
+            $blockName = $matches[1];
+            if (isset($this->blocks[$blockName])) {
+                return '{% block '. $blockName .' %}'.$this->blocks[$blockName].'{% endblock %}';
             }
             return $matches[0];
         }, $content);

@@ -8,7 +8,7 @@
  */
 
 return [
-    'isdebug' => false,
+    'isdebug' => true,
     'template' => [
         'path' => 'views',
         'cache' => 'caches',
