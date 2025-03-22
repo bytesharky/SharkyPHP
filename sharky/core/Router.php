@@ -12,15 +12,17 @@
 namespace Sharky\Core;
 use Sharky\Core\RouteNotFoundException;
 use Sharky\Core\Container;
+use Sharky\Core\Router\Entry;
 
 class Router
 {
     private static $routes = [];
     private static $groupOptions = [];
-    private static $currentRoute = null;
+    private static $middleware = [];
     public const MATCH_START = 1;
     public const MATCH_END = 2;
     public const MATCH_FULL = 3;
+
 
     // 加载路由
     public static function loadRoutes()
@@ -34,67 +36,69 @@ class Router
     // 注册路由
     public static function reg($method, $path, $callback, $matchMode = -1)
     {
-        // 应用分组的 prefix 和 controller 配置
+        $middleware = self::$middleware;
         if (isset(self::$groupOptions['prefix'])) {
             $path = rtrim(self::$groupOptions['prefix'], '/') . '/' . ltrim($path, '/');
         }
         if (isset(self::$groupOptions['controller']) && is_string($callback)) {
             $callback = [self::$groupOptions['controller'], $callback];
         }
-
+        if (isset(self::$groupOptions['middleware'])){
+            $middleware = array_merge(self::$groupOptions['middleware'], $middleware);
+        }
         if ($matchMode === -1) {
             $matchMode = self::$groupOptions['matchMode'] ?? 3;
         }
         
-        
         // 将路径格式化为正则表达式，并添加到路由表中
         $parse = self::formatPath($path, $matchMode);
-        $route = [
-            'method' => $method,
-            'path' => $parse['path'],
-            'params' => $parse['params'],
-            'callback' => $callback,
-            'middleware' => [] // 添加中间件数组
-        ];
-        
+
+        $route = new Entry(
+            $method,
+            $parse['path'],
+            $parse['params'],
+            $callback,
+            middleware: $middleware
+        );
+        self::$middleware = [];
         self::$routes[] = $route;
-        self::$currentRoute = &self::$routes[count(self::$routes) - 1];
         
-        return new self(); // 返回实例以支持链式操作
+        return $route; // 返回实例以支持链式操作
     }
 
     public static function preg_reg($method, $path, $callback, $params)
     {
+        $middleware = self::$middleware;
         if (isset(self::$groupOptions['prefix'])) {
             $path = self::$groupOptions['prefix'].$path;
         }
         if (isset(self::$groupOptions['controller']) && is_string($callback)) {
             $callback = [self::$groupOptions['controller'], $callback];
         }
+        if (isset(self::$groupOptions['middleware'])){
+            $middleware = array_merge(self::$groupOptions['middleware'], $middleware);
+        }
 
-        $route = [
-            'method' => $method,
-            'path' => $path,
-            'params' => $params,
-            'callback' => $callback,
-            'middleware' => [] // 添加中间件数组
-        ];
-        
+        $route = new Entry(
+            $method,
+            $path,
+            $params,
+            $callback,
+            $middleware
+        );
+        self::$middleware = [];
         self::$routes[] = $route;
-        self::$currentRoute = &self::$routes[count(self::$routes) - 1];
         
-        return new self();
+        return $route;
     }
 
     // 添加中间件到当前路由
     public static function middleware($middleware)
     {
-        if (self::$currentRoute) {
-            if (is_array($middleware)) {
-                self::$currentRoute['middleware'] = array_merge(self::$currentRoute['middleware'], $middleware);
-            } else {
-                self::$currentRoute['middleware'][] = $middleware;
-            }
+        if (is_array($middleware)) {
+            self::$middleware = array_merge(self::$middleware, $middleware);
+        } else {
+            self::$middleware[] = $middleware;
         }
         
         return new self(); // 返回实例以支持链式操作
@@ -107,14 +111,16 @@ class Router
         $previousGroupOptions = self::$groupOptions;
         
         // 处理分组中间件
-        if (isset($options['middleware'])) {
-            if (!isset(self::$groupOptions['middleware'])) {
-                self::$groupOptions['middleware'] = [];
-            }
-            
-            $middleware = is_array($options['middleware']) ? $options['middleware'] : [$options['middleware']];
-            $options['middleware'] = array_merge(self::$groupOptions['middleware'], $middleware);
+        if (!isset(self::$groupOptions['middleware'])) {
+            self::$groupOptions['middleware'] = [];
         }
+        if (isset($options['middleware'])) {
+            $middleware = is_array($options['middleware']) ? $options['middleware'] : [$options['middleware']];
+        }else{
+            $middleware = [];
+        }
+
+        $options['middleware'] = array_merge(self::$groupOptions['middleware'], self::$middleware, $middleware);
         
         self::$groupOptions = array_merge(self::$groupOptions, $options);
         
@@ -123,9 +129,11 @@ class Router
         
         // 恢复之前的分组选项
         self::$groupOptions = $previousGroupOptions;
-        
+        self::$middleware = [];
         return new self(); // 返回实例以支持链式操作
     }
+
+    
 
     // 格式化路径
     private static function formatPath($path, $matchMode)
@@ -157,28 +165,22 @@ class Router
         $uri = explode("?", $uri)[0];
         $routeExist = false;
         $method = strtoupper($method);
-        
+
         foreach (self::$routes as $route) {
-            if (preg_match($route['path'], $uri, $params)) {
+            if (preg_match($route->path, $uri, $params)) {
                 // 找到了路由
                 $routeExist = true;
                 if (
-                    ('ALL' === $route['method']) ||
-                    ($method === $route['method']) ||
-                    (is_array($route['method']) && (
-                        in_array('ALL', $route['method']) ||
-                        in_array($method, $route['method'])))
+                    ('ALL' === $route->method) ||
+                    ($method === $route->method) ||
+                    (is_array($route->method) && (
+                        in_array('ALL', $route->method) ||
+                        in_array($method, $route->method)))
                 ) {
                     array_shift($params);
-                    $length = count($route['params']);
+                    $length = count($route->params);
                     $params_ = array_pad(array_slice($params, 0, $length), $length, null);
-                    $params_ = array_combine($route['params'], $params_);
-                    
-                    // 获取分组中间件
-                    $middleware = isset(self::$groupOptions['middleware']) ? self::$groupOptions['middleware'] : [];
-                    
-                    // 合并路由中间件
-                    $middleware = array_merge($middleware, $route['middleware']);
+                    $params_ = array_combine($route->params, $params_);
                     
                     // 创建请求上下文
                     $request = Container::getInstance()->make('request');
@@ -187,9 +189,9 @@ class Router
                     $request->method = $method;
                     
                     // 执行中间件链
-                    $result = $this->runMiddlewareChain($middleware, $request, function($request) use ($route) {
+                    $result = $this->runMiddlewareChain($route->middleware, $request, function($request) use ($route) {
                         // 执行控制器方法
-                        return $this->callControllerMethod($route['callback'], $request->params);
+                        return $this->callControllerMethod($route->callback, $request->params);
                     });
                     
                     return $this->renderRouter($result);

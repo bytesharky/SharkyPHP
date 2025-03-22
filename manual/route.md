@@ -35,7 +35,12 @@ Router::reg('POST', '/users/create', ['UserController', 'create']);
  ```
 
 ### 3. 注册路由（ `preg_reg` 方法）
-  与 `reg` 方法类似，唯一不同的是这里的 `$path` 应传入一个正则表达式，实现更高级的自定义路由。 
+
+  与 `reg` 方法类似，利用正则表达式，实现更高级的自定义路由。
+
+  `$path` 应传入一个正则表达式；
+
+  `$params` 应传入一个参数名数组，按照正则表达式比配组的顺序。
 
 ### 4. 注册路由分组（ `group` 方法）
 
@@ -83,12 +88,109 @@ $params = $matchedParams;
 $result = $this->callControllerMethod($callback, $params);
  ```
 
+### 8. 中间件注册函数（ `middleware` 方法）
+
+- **功能**：用于注册路由中间件。
+- **参数说明**：
+  - `$middleware` ：路由中间件数组。
+- **使用示例**：
+
+ ``` php
+// 为一个路由注册中间件
+Router::reg('GET', '/users', function () {
+    // 这里是处理该路由的逻辑，比如查询所有用户并返回结果
+    return '查询到的所有用户信息';
+})->middleware([
+    AuthMiddleware::class
+]);
+```
+
+``` php
+// 为一组路由注册中间件
+Router::middleware([
+    AuthMiddleware::class
+])->group(['prefix' => '/demo'], function () {
+    Router::reg('GET', '/list', [DemoController::class, 'list']);
+    Router::reg('DELETE', '/{id}', [DemoController::class, 'delete']);
+    Router::reg('GET', '/{id}', [DemoController::class, 'show']);
+});
+```
+
+### 9. 中间件排除函数（ `withoutMiddleware` 方法）
+
+- **功能**：用于排除路由中间件。
+- **参数说明**：
+  - `$middleware` ：路由中间件数组。
+- **使用示例**：
+
+```php
+// 为路由排除中间件
+Router::middleware([
+    AuthMiddleware::class
+])->group(['prefix' => '/demo'], function () {
+    Router::reg('GET', '/list', [DemoController::class, 'list'])->withoutMiddleware([
+        AuthMiddleware::class
+    ]);
+    Router::reg('DELETE', '/{id}', [DemoController::class, 'delete']);
+    Router::reg('GET', '/{id}', [DemoController::class, 'show']);
+});
+```
+
+### 10. 便捷方法
+
+本次更新新增以下便捷方法
+
+#### 便捷方法 - GET
+
+```php
+public static function get($path, $callback, $matchMode = -1)
+{
+    return self::reg('GET', $path, $callback, $matchMode);
+}
+```
+
+#### 便捷方法 - POST
+
+```php
+public static function post($path, $callback, $matchMode = -1)
+{
+    return self::reg('POST', $path, $callback, $matchMode);
+}
+```
+
+#### 便捷方法 - PUT
+
+```php
+public static function put($path, $callback, $matchMode = -1)
+{
+    return self::reg('PUT', $path, $callback, $matchMode);
+}php
+```
+
+#### 便捷方法 - DELETE
+
+```php
+public static function delete($path, $callback, $matchMode = -1)
+{
+    return self::reg('DELETE', $path, $callback, $matchMode);
+}
+```
+
+#### 便捷方法 - ALL HTTP方法
+
+```php
+public static function any($path, $callback, $matchMode = -1)
+{
+    return self::reg('ALL', $path, $callback, $matchMode);
+}
+```
+
 ---
 
 本文档是在 AI 生成的内容的基础上修订，其信息不保证完全准确。
 
 在使用过程中，如果您发现了任何问题或者有疑问，可以通过 new issues 的方式反馈，我们会及时处理。感谢您的理解与支持。
 
-修订：2024-11-6 22点
+修订：2025-3-22 17点
 
 [返回目录](/SharkyPHP.md)

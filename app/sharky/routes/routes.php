@@ -26,8 +26,12 @@ Router::reg(['GET','POST'], '/auth', [HomeController::class, 'auth'])->middlewar
 
 Router::reg(['GET','POST'], '/child', [HomeController::class, 'child']);
 /* 路由组注册实例 */
-Router::group(['prefix' => '/demo'], function () {
-    Router::reg('GET', '/list', [DemoController::class, 'list']);
+Router::middleware([
+    AuthMiddleware::class
+])->group(['prefix' => '/demo'], function () {
+    Router::reg('GET', '/list', [DemoController::class, 'list'])->withoutMiddleware([
+        AuthMiddleware::class
+    ]);
     Router::reg('GET', '/{id}', [DemoController::class, 'show']);
     Router::reg('DELETE', '/{id}', [DemoController::class, 'delete']);
 });
