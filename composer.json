@@ -1,6 +1,6 @@
 {
     "name": "sharky/sharky-php",
-    "version": "1.2.0",
+    "version": "1.2.1",
     "description": "Mini MVC",
     "type": "project",
     "license": "MIT",

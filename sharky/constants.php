@@ -9,7 +9,7 @@
 
  // 版本和版权信息
 define('PROJECT', "SharkyPHP");
-define('VERSION', "1.2.0");
+define('VERSION', "1.2.1");
 define('COPYRIGHT', getCopyright(2024,'Forgot Fish'));
 
 // 定义框架目录常量
