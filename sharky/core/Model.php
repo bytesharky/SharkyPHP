@@ -14,7 +14,6 @@ class Model
     protected $config;
     protected $tableName;
     protected $primarys = ['id'];
-    protected $db;
     protected $where = [];
     protected $groupByColumns = [];
     protected $orderByConditions = [];
@@ -30,26 +29,38 @@ class Model
     protected $pageSize = null;
     protected $attributes = [];
     protected $records = [];
+    protected $database = null;
+    protected $prefix = null;
 
-    public function __construct()
+    public function __construct($database = 'default')
     {
-        // 如果未指定表名，使用类名
-        if (empty($this->tableName)) {
-            $className = get_class($this);
-            $className = substr($className, strrpos($className, '\\') + 1);
-            $this->tableName = strtolower(str_replace('Model', '', $className));
+        $this->config = Container::getInstance()
+            ->make('config')
+            ->get('database.' . $database);
+
+        if (empty($this->config)) {
+            throw new \Exception("未找到数据库配置");
         }
 
-        // 获取数据库实例(建议使用容器复用数据库连接)
-        $this->db = Container::getInstance()->make('database');
-        // $this->db = new Database();
+        if (!isset($this->prefix)){
+            $this->prefix = isset($this->config['prefix']) ? $this->config['prefix'] : 'sharky_';
+        }
 
+        // 如果未指定表名，使用类名
+        if (empty($this->tableName)) {
+            $this->tableName = $this->generateTableName();
+        }
+
+        $this->database = Database::connects($database);
         // 获取表字段
-        $this->fields = $this->db->getFields($this->tableName);
+        $this->fields = $this->database->slave()->getFields($this->prefix . $this->tableName);
 
-        $container = Container::getInstance();
-        $config = $container->make('config');
-        $this->config = $config;
+    }
+
+    public function table($tableName)
+    {
+        $this->tableName = $tableName;
+        return $this;
     }
 
     public function orderBy($columns) {
@@ -246,7 +257,7 @@ class Model
         $fieldsSql = $this->buildFields($fields);
         
         list($whereSql, $params) = $this->buildWhere();
-        $sql = "SELECT {$fieldsSql} FROM {$this->tableName}" . $whereSql;
+        $sql = "SELECT {$fieldsSql} FROM {$this->prefix}{$this->tableName}" . $whereSql;
 
         if (!empty($this->groupByColumns)) {
             $sql .= " GROUP BY ". implode(', ', $this->groupByColumns);
@@ -265,7 +276,7 @@ class Model
 
         $this->setLastSql($sql, $params);
 
-        $results = $this->db->query($sql, $params);
+        $results = $this->database->slave()->query($sql, $params);
 
         // 清空 records 并将每个记录转换为 Model 实例
         $this->records = new Collection();
@@ -300,10 +311,10 @@ class Model
         }
 
         // 处理批量插入
+        $params = [];
         if (isset($data[0]) && is_array($data[0])) {
             $fields = array_keys($data[0]);
             $values = [];
-            $params = [];
             foreach ($data as $row) {
                 $placeholders = [];
                 foreach ($fields as $field) {
@@ -313,25 +324,25 @@ class Model
                 $values[] = '(' . implode(',', $placeholders) . ')';
             }
 
-            $sql = "INSERT INTO {$this->tableName} (" .
+            $sql = "INSERT INTO {$this->prefix}{$this->tableName} (" .
                 implode(',', $fields) .
                 ") VALUES " .
                 implode(',', $values);
             $this->setLastSql($sql, $params);
-            return $this->db->execute($sql, $params);
         } else {
             // 单条插入
             $fields = array_keys($data);
             $placeholders = array_fill(0, count($fields), '?');
-            $sql = "INSERT INTO {$this->tableName} (" .
+            $sql = "INSERT INTO {$this->prefix}{$this->tableName} (" .
                 implode(',', $fields) .
                 ") VALUES (" .
                 implode(',', $placeholders) .
                 ")";
 
             $this->setLastSql($sql, array_values($data));
-            return $this->db->execute($sql, array_values($data));
+            $params = array_values($data);
         }
+        return $this->database->master()->execute($sql, $params);
     }
 
     public function update($data)
@@ -354,9 +365,9 @@ class Model
         if ($whereSql === "") {
             throw new \Exception("为了安全起见，不允无条件更新");
         }
-        $sql = "UPDATE {$this->tableName} SET " . implode(',', $sets) . $whereSql;
+        $sql = "UPDATE {$this->prefix}{$this->tableName} SET " . implode(',', $sets) . $whereSql;
         $this->setLastSql($sql, $params);
-        return $this->db->execute($sql, $params);
+        return $this->database->master()->execute($sql, $params);
     }
 
     public function save($data = [])
@@ -395,10 +406,10 @@ class Model
         if ($whereSql === "") {
             throw new \Exception("为了安全起见，不允无条件删除");
         }
-        $sql = "DELETE FROM {$this->tableName}" . $whereSql;
+        $sql = "DELETE FROM {$this->prefix}{$this->tableName}" . $whereSql;
 
         $this->setLastSql($sql, $params);
-        return $this->db->execute($sql, $params);
+        return $this->database->master()->execute($sql, $params);
     }
 
     public function fields($fields)
@@ -544,7 +555,6 @@ class Model
         return $pageInfo;
     }
 
-
     public function limit($limit, $offset = 0)
     {
         $this->limit = max(0, intval($limit));
@@ -558,9 +568,9 @@ class Model
     public function count()
     {
         list($whereSql, $params) = $this->buildWhere();
-        $sql = "SELECT COUNT(*) as total FROM {$this->tableName}" . $whereSql;
+        $sql = "SELECT COUNT(*) as total FROM {$this->prefix}{$this->tableName}" . $whereSql;
         $this->setLastSql($sql, $params);
-        $result = $this->db->query($sql, $params);
+        $result = $this->database->slave()->query($sql, $params);
         return isset($result[0]['total']) ? intval($result[0]['total']) : 0;
     }
 
@@ -601,6 +611,7 @@ class Model
     public function __debugInfo()
     {
         return [
+            "prefix" => $this->prefix,
             "tableName" => $this->tableName,
             "primarys" => $this->primarys,
             "fields" => $this->fields,
@@ -613,5 +624,14 @@ class Model
             "pageSize " => $this->pageSize,
             "attributes" => $this->attributes,
         ];
+    }
+
+    private function generateTableName() {
+        $className = get_class($this);
+        $className = substr($className, strrpos($className, '\\') + 1);
+        $tableName = str_replace('Model', '', $className);
+        $pattern = '/(?<!^)[A-Z]/';
+        $tableName = preg_replace($pattern, '_$0', $tableName);
+        return strtolower($tableName);
     }
 }

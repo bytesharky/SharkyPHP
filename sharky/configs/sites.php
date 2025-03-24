@@ -8,10 +8,10 @@
  */
 
 return [
-    'domain' => 'doffish.com',
-    'default' => 'sharky',
-    'sites' => [
-        'sharky'     => 'sharky',
-        'subdomain'  => 'path',
+    'domain'            => 'doffish.com',
+    'default'           => 'sharky',
+    'sites'             => [
+        'sharky'        => 'sharky',
+        'subdomain'     => 'path',
     ]
 ];

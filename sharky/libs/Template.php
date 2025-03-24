@@ -93,7 +93,7 @@ class Template
             $sixDigitNumber = str_pad(rand(0, 999999), 6, '0', STR_PAD_LEFT);
             $combinedString = $timestamp . $sixDigitNumber;
 
-            $cacheFile = $cachePath . str_replace("\\", "-", $template) . md5($combinedString) . '.php';
+            $cacheFile = $cachePath . str_replace(DIRECTORY_SEPARATOR, "-", $template) . '-' . md5($combinedString) . '.php';
         }
 
         if ($this->isDebug || 

@@ -201,6 +201,12 @@ class Router
             }
         }
 
+        $request = Container::getInstance()->make('request', [
+            'params' => [],
+            'uri' => $uri,
+            'method' => $method
+        ]);
+
         if ($routeExist) {
             // 返回405 Method Not Allowed
             return $this->renderRouter([

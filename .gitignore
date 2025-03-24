@@ -6,3 +6,4 @@ app/caches
 app/caches/*
 app/sharky/caches
 app/sharky/caches/*
+.env
