@@ -8,10 +8,10 @@
  */
 
 return [
-    'isdebug' => false,
-    'template' => [
-        'path' => 'views',
-        'cache' => 'caches',
+    'isdebug'           => env('APP_DEBUG', false),
+    'template'          => [
+        'path'          => 'views',
+        'cache'         => 'caches',
     ],
-    'language' => 'languages',
+    'language'          => 'languages',
 ];

@@ -9,8 +9,6 @@
 
 namespace App\Controllers;
 
-use App\Models\DemoModel;
-
 class HomeController extends Controller
 {
     public function index()
@@ -59,6 +57,14 @@ class HomeController extends Controller
         $this->display('home/index.php', ['title' => 'Database', 'content' => $content]);
     }
     
+    public function auth()
+    {
+        $content = "路由中间件是处理请求和响应的过滤层。\n\n" .
+            "在路由执行前后介入，可用于身份验证、日志记录等。\n\n" .
+            "它能对请求数据预处理，也能在响应返回前修改。\n\n" .
+            "如验证用户登录，只有通过验证才进入路由逻辑，提升应用安全性与可维护性。\n\n";
+        $this->display('home/index.php', ['title' => 'Auth', 'content' => $content]);
+    }
     public function child()
     {
 

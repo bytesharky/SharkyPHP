@@ -44,7 +44,7 @@ class Container
         }
 
         if (!is_array($parameters)) {
-            throw new \Exception('参数必须是一个数组');
+            throw new \Exception("绑定抽象类型{$abstract}时遇到错误，\$parameters 必须是一个数组");
         }
         // 如果第二个参数传入的是数组，且第三个参数是空
         // 那么就视为第二个参数是参数
@@ -64,7 +64,7 @@ class Container
                 throw new \Exception("无法抽象{$concrete}类");
             }
         } else if (!($concrete instanceof Closure)) {
-            throw new \Exception('实现必须是一个类名或者是一个闭包函数');
+            throw new \Exception("抽象类型{$abstract}实现必须是一个类名或者是一个闭包函数");
         }
 
         $this->bindings[$abstract] = [
@@ -139,7 +139,7 @@ class Container
                             $parametersToPass[] = $parameters[$parameter->getName()];
                         } else {
                             // 如果没有指定参数值，抛出异常
-                            throw new \Exception("缺少参数: " . $parameter->getName());
+                            throw new \Exception("实例化抽象类型{$abstract}时遇到错误，缺少参数: " . $parameter->getName());
                         }
                     } else {
                         // 如果参数指定了类型，通过容器获取对应的实例

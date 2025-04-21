@@ -1,11 +1,22 @@
 <?php
+
+/**
+ * @description 异常类
+ * @author Sharky
+ * @date 2025-3-22
+ * @version 1.1.0
+ */
+
 namespace Sharky\Core;
 
 use Exception;
 
+class RouteNotFoundException extends SharkyException{}
 class SharkyException extends Exception{
 
     private static $isInit = false;
+
+    private static $isDebug;
 
     public static function init(){
         
@@ -24,9 +35,9 @@ class SharkyException extends Exception{
         // 加载配置
         $container = Container::getInstance();
         $config = $container->make('config');
-        $isdebug = $config->get('config.isdebug', false);
+        self::$isDebug = $config->get('config.isdebug', false);
 
-        if ($isdebug) {
+        if (self::$isDebug) {
             self::display() ;
         } else {
             self::hidden() ;
@@ -46,7 +57,6 @@ class SharkyException extends Exception{
     // 统一处理异常信息
     public static function unityExceptionHandler($exception)
     {
-        self::init();
         // 调试打开时显示错误信息和堆栈跟踪
         $errorMessage = $exception->getMessage();
         $traceStr = $exception->getTraceAsString();
@@ -80,7 +90,7 @@ class SharkyException extends Exception{
         ob_clean();
         http_response_code(500);
         // 调试关闭时显示友好错误页面,否则输出详细信息
-        if (!ini_get('display_errors')) {
+        if (!self::$isDebug) {
             $template = SHARKY_ROOT . '/errors/friendly.php';
         } else {
             $template = SHARKY_ROOT . '/errors/debug.php';
@@ -90,7 +100,7 @@ class SharkyException extends Exception{
             extract(['message' => $message, 'traceStr' => $traceStr]);
             include $template;
         } else {
-            if (!ini_get('display_errors')) {
+            if (!self::$isDebug) {
                 echo ('<pre>遇到一个问题，请稍后再试!</pre>');            
             } else {
                 echo ('<pre>异常跟踪模板文件不存在!</pre><pre>'. $message. '</pre><pre>'. $traceStr. '</pre>');

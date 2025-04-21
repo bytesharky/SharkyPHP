@@ -4,6 +4,8 @@
 
 {% block content %}
     <p>这里是child页 - 内容</p>
+
+    {% include 'include.html' %}
+    
 {% endblock %}
 
-{% include 'include.html' %}

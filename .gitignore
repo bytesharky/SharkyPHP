@@ -1,3 +1,4 @@
+.env
 vendor
 vendor/*
 node_modules
@@ -6,3 +7,4 @@ app/caches
 app/caches/*
 app/sharky/caches
 app/sharky/caches/*
+composer.lock

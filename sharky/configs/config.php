@@ -8,7 +8,7 @@
  */
 
 return [
-    'isdebug' => true,
-    'multi_site' => true,
-    'restful' => "html"
+    'isdebug'           => env('APP_DEBUG', false),
+    'multi_site'        => true,
+    'restful'           => "html"
 ];

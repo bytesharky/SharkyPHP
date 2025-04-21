@@ -9,14 +9,12 @@
 
 namespace App\Controllers;
 
-use App\Models\DemoModel;
-
-class DemoController extends TwigController
+class DemoController extends Controller
 {
     // 模拟文章列表数据
     protected $article_list = [
         [
-            'title' => '这是一个Twig渲染的页面',
+            'title' => '这是一个内置模版引擎渲染的页面',
             'url' => '/demo/0',
             'author' => 'Sharky',
             'published_date' => '2024-11-02',
@@ -43,12 +41,7 @@ class DemoController extends TwigController
 
     public function list()
     {
-
-        // 模拟分页相关数据
-        $has_previous_page = true;
-        $has_next_page = false;
-        // 在控制器中（假设已经初始化好Twig环境为$twig），将数据传递给模板进行渲染
-        $this->display('demo/index.twig', [
+        $this->display('demo/index.php', [
             'article_list' => $this->article_list,
             'COPYRIGHT' => COPYRIGHT,
             'PROJECT' => PROJECT,

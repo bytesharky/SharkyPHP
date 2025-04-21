@@ -19,6 +19,8 @@ class Config
 
     public function __construct()
     {
+        // 加载环境变量
+        loadEnv();
         $this->initConfigs();
     }
 
