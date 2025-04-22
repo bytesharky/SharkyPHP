@@ -8,10 +8,14 @@
  */
 
 return [
+    'restful'           => "html",
     'isdebug'           => filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN),
     'template'          => [
         'path'          => 'views',
         'cache'         => 'caches',
     ],
-    'language'          => 'languages',
+    'language'          => [
+        'default'       => 'en',
+        'path'          => 'languages',
+    ]
 ];
