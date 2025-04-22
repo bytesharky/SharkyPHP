@@ -18,6 +18,7 @@
         .content{width: 100%;max-width:500px;}
         .content p{margin:1rem 2rem;}
         .version {width: 90%; border-top: 1px solid #aaa;font-size: 14px;}
+        .mfa-img {width: 120px;hheight: 120px;}
     </style>
 </head>
 
@@ -31,12 +32,17 @@
             <a class="link" href="/view">视图</a>
             <a class="link" href="/database">数据库</a>
             <a class="link" href="/auth">中间件</a>
+            <a class="link" href="/extension">扩展功能</a>
             <a class="link" href="https://gitee.com/bytesharky/SharkyPHP" target="_blank">Gitee</a>
             <a class="link" href="https://github.com/bytesharky/SharkyPHP" target="_blank">Github</a>
         </div>
         <pre>{{ content }}</pre>
         {% if $html??false %}
         <p><a class="link" href="/child">模板继承演示</a></p>
+        {% endif %}
+        {% if $imgurl??false %}
+        <p>使用Google Authenticator或Microsoft Authenticator扫码测试</p>
+        <p><img class="mfa-img" src="{{ imgurl }}" /></p>
         {% endif %}
     </div>
     <hr>

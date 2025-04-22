@@ -3,8 +3,8 @@
 /**
  * @description 公共函数文件
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-4-23
+ * @version 1.3.0
  */
 
 // 获取站点路径
@@ -65,8 +65,12 @@ function getCopyright($start, $copyright){
 }
 
 // 获取环境变量
-function env($key, $default = null) {
-    return (array_key_exists($key, $_ENV) ? $_ENV[$key] : getenv($key)) ?: $default;
+function env($key, $default = null, $callback = null) {
+    $value = (array_key_exists($key, $_ENV) ? $_ENV[$key] : getenv($key)) ?: $default;
+    if (is_callable($callback)){
+        return $callback($value);
+    }
+    return $value;
 }
 
 // 加载环境变量

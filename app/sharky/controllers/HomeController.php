@@ -3,11 +3,14 @@
 /**
  * @description 控制器类
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-4-23
+ * @version 1.3.0
  */
 
 namespace App\Controllers;
+
+use Sharky\Libs\MFA;
+
 
 class HomeController extends Controller
 {
@@ -51,9 +54,10 @@ class HomeController extends Controller
     {
 
         $content = "数据模型已实现基础的增删改查、分页查询和事务机制。\n\n" .
-            "但复杂的多表联合查询尚未实现，若确实有需要\n\n" .
-            "可暂用 Database 类的 query 和 execute 方法过渡。\n\n" .
-            "当然也可在该模型基础上自行实现，若能共享代码，我们将十分感谢。\n\n";
+            "以及简单多表联合查询，如果你的SQL查询相对比较复杂\n\n" .
+            "可以用 Database 类的 query 和 execute 方法实现。\n\n" .
+            "当然你有更好的联合查询实现方式，也可以提出宝贵的建议，\n\n". 
+            "我们会充分考虑您的建议，并十分感谢。\n\n";
         $this->display('home/index.php', ['title' => 'Database', 'content' => $content]);
     }
     
@@ -65,10 +69,29 @@ class HomeController extends Controller
             "如验证用户登录，只有通过验证才进入路由逻辑，提升应用安全性与可维护性。\n\n";
         $this->display('home/index.php', ['title' => 'Auth', 'content' => $content]);
     }
+
     public function child()
     {
 
         $content = "这是模板继承的测试，它继承了base.html.";
         $this->display('home/child.php', ['title' => '模板继承的测试', 'content' => $content]);
+    }
+
+    public function extension()
+    {
+        $mfa = new MFA('JBSWY3DPEHPK3PXP');
+        $tokens = $mfa->getTOTPToken();
+        $token = $tokens['token'][1];
+        $rest = $tokens['rest'];
+
+        $content = "目前我添加了两个扩展组件\n\n" .
+            "JWT：JSON Web Token，方便实现API 认证、单点登录等场景\n\n" .
+            "MFA：Multi-Factor Authentication，方便实现两步身份验证\n\n" .
+            "兼容：Google Authenticator、Microsoft Authenticator\n\n" .
+            "当前的动态密码是：<span style=\"color: red;\">{$token}</span>，剩余时间：{$rest}\n\n";
+        
+        $imgurl = 'https://www.doffish.com/QRCode.do?text=' . $mfa->getQRCodeUrl('MFA 测试');
+
+        $this->display('home/index.php', ['title' => 'Extension', 'content' => $content, 'imgurl' => $imgurl]);
     }
 }

@@ -1,4 +1,10 @@
 <?php
+/**
+ * @description 数据库连接池
+ * @author Sharky
+ * @date 2025-4-23
+ * @version 1.3.0
+ */
 
 namespace Sharky\Core\Database;
 
@@ -13,11 +19,11 @@ class Pool{
         $this->config = $config;
     }
 
-    private function connect($host, $user, $pass, $name, $port, $charset): Connect
+    private function connect($host, $type, $user, $pass, $name, $port, $charset): Connect
     {
-        return new Connect($host, $user, $pass, $name, $port, $charset);
+        return new Connect($host, $type, $user, $pass, $name, $port, $charset);
     }
-
+ 
     public function setSticky($sticky): Connect
     {
         $this->sticky = $sticky;
@@ -40,6 +46,7 @@ class Pool{
 
         $this->slave = $this->connect(
             $host,
+            $this->config['type'],
             $this->config['username'],
             $this->config['password'],
             $this->config['database'],
@@ -60,6 +67,7 @@ class Pool{
 
         $this->master = $this->connect(
             $host,
+            $this->config['type'],
             $this->config['username'],
             $this->config['password'],
             $this->config['database'],

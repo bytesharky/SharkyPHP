@@ -1,19 +1,29 @@
 <?php
+/**
+ * @description 数据库连接类
+ * @author Sharky
+ * @date 2025-4-23
+ * @version 1.3.0
+ */
 
 namespace Sharky\Core\Database;
+
+use Exception;
 
 class Connect
 {
     private $connection = null;
-    private $connectType;
+    private $connectType = 'mysqli';
     private $pdoStatement;
 
-    public function __construct($host, $user, $pass, $name, $port, $charset)
+    public function __construct($host, $type, $user, $pass, $name, $port, $charset)
     {
-        if ($this->connection) {
-            return;
+        if (!in_array($type, ['mysqli','PDO'])){
+            throw new Exception("不支持的链接类型: {$type}");
         }
 
+        $this->connectType = $type;
+        
         if ($this->connectType === 'mysqli') {
             $this->connection = new \mysqli(
                 $host,
@@ -93,16 +103,25 @@ class Connect
     public function getFields($table)
     {
         if ($this->connectType === 'mysqli') {
+
             $result = $this->connection->query("SHOW COLUMNS FROM {$table}");
-            $fields = [];
-
-            while ($row = $result->fetch_assoc()) {
-                $fields[] = $row['Field'];
-            }
-
-            return $fields;
+            return array_column($result->fetch_all(MYSQLI_ASSOC), 'Field');
         } else {
+
             $stmt = $this->connection->query("SHOW COLUMNS FROM {$table}");
+            return array_column($stmt->fetchAll(), 'Field');
+        }
+    }
+
+    public function getPrimarys($table)
+    {
+        if ($this->connectType === 'mysqli') {
+
+            $result = $this->connection->query("SHOW COLUMNS FROM {$table} WHERE `KEY` = 'PRI'");
+            return array_column($result->fetch_all(MYSQLI_ASSOC), 'Field');
+        } else {
+
+            $stmt = $this->connection->query("SHOW COLUMNS FROM {$table} WHERE `KEY` = 'PRI'");
             return array_column($stmt->fetchAll(), 'Field');
         }
     }

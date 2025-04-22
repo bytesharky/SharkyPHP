@@ -3,13 +3,14 @@
 /**
  * @description 数据配置文件
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-4-23
+ * @version 1.3.0
  */
 
 return [
     'default'  => [
         // 如果不使用读写分离，只需配置master即可
+        'type'          =>  env('DB_CONNECT_TYPE', 'mysqli'),
         'master'        =>  env('DB_MASTER', 'localhost'),
         'slave'         =>  env('DB_SLAVE', 'localhost'),
         'sticky'        =>  env('DB_STICKY', true),
