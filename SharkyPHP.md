@@ -1,12 +1,14 @@
 # SharkyPHP
 
-寄语：
+写在前面：
 
 SharkyPHP 是一款独具特色的超迷你 MVC 框架。虽然在中大型项目开发中，SharkyPHP 可能不是最佳选择，但如果你热衷于探索 MVC 框架的实现原理，或者投身于小微型项目的开发，那么 SharkyPHP 将是一个理想的伴侣。当引入一个完整的 MVC 框架显得臃肿不堪时，不妨试试 SharkyPHP，它或许能为你带来轻松愉快的开发体验。
 
 同时，SharkyPHP 是一个开放的作品，就像一座等待雕琢的美玉。我们热忱欢迎每一位开发者积极参与，为它提出宝贵的优化建议。让我们共同打磨 SharkyPHP，使其在小微型项目的天空中绽放更加璀璨的光芒。
 
 —— ByteSharky
+
+修订时间：2025-4-23
 
 ## 一、项目结构
 
@@ -24,20 +26,36 @@ project/
     ├── constants.php           // 全局常量  
     │ 
     ├── core/                   // 核心目录
+    │   │
+    │   ├── Database/           // 数据库子目录
+    │   │    ├── Connect.php    // 连接类
+    │   │    └── Pool.php       // 连接池
+    │   │
+    │   ├── Redis/              // Redis子目录
+    │   │    ├── Connect.php    // 连接类
+    │   │    └── Pool.php       // 连接池
+    │   │
+    │   ├── Router/             // 路由子目录
+    │   │    └── Entry          // 路由条目
+    │   │
     │   ├── App.php             // 框架核心
     │   ├── Collection.php      // 数据集合
     │   ├── Config.php          // 配置管理
     │   ├── Container.php       // 简单容器
     │   ├── Controller.php      // 控制器基类
     │   ├── Database.php        // 数据库管理器
-    │   ├── SharkyException.php // 异常类
+    │   ├── Middleware.php      // 中间件类
     │   ├── Model.php           // 模型基类
-    │   └── Router.php          // 路由管理
+    │   ├── Request.php         // 请求类
+    │   ├── Router.php          // 路由管理
+    │   └── SharkyException.php // 异常类
     │ 
     ├── libs/                   // 扩展库
     │   ├── Cookie.php          // 状态管理器（Cookie）
     │   ├── Session.php         // 会话管理器（Session）
     │   ├── Template.php        // 模板类
+    │   ├── JWT.php             // JTW类（JSON Web Token）
+    │   ├── MFA.php             // MFA类（Multi-Factor Authentication）
     │   └── ...
     │ 
     ├── utils/                  // 工具目录
@@ -105,40 +123,41 @@ project/
 
 ## 二、环境要求
 
-   1. 支持Linux和Windows
-   2. 目前尚不确定最低支持的PHP版本(建议8.0++)
-   3. 确保安装了对应版本的 `composer` 包管理器
-   4. **本框架不依赖其他第三方包**
-   5. 建议使用composer加载类
-   6. **注意：**
+* **本框架不依赖其他第三方包**
 
->
-> 此框架引入了Twig模版引擎，位于 `/controllers/TwigController.php` 。(从2024年11月6日后不在默认安装Twig)
->
-> 如需使用请通过 `composer require twig/twig` 命令安装。
->
+1. 支持Linux和Windows
+
+2. 建议使用PHP 8.0++
+
+3. 匹配PHP版本的 `composer` 包管理器(建议，非必要)
 
 ## 三、使用说明
 
-1. ### 下载安装
+### 下载安装
+
+1. #### 使用 `composer` 安装
 
    建议使用 `composer create-project sharky/sharky-php` 命令安装，当然也可以克隆下面的仓库地址
 
+2. #### 直接下载安装
+
+   可以直接克隆仓库或下载仓库到你本地，下载后运行 `composer dump-autoload` 来生成自动加载类的脚本。
+
    * **Github**    ：<https://github.com/bytesharky/SharkyPHP>
 
-   * **Gitee**     ：<https://gitee.com/bytesharky/SharkyPHP> (可能更新不同步)
+   * **Gitee**     ：<https://gitee.com/bytesharky/SharkyPHP> (可能更新不及时)
 
-   本框架不依赖其他第三方包，下载后需要运行 `composer dump-autoload` 生成自动加载类的脚本。
+## 四、核心类的基本概述
 
-2. ### 核心
+1. ### 应用类
 
-   [`App`](/manual/app.md) 类位于 `Sharky\Core` 命名空间下，是框架的核心类，负责整个应用程序的初始化和启动流程。它通过依赖注入获取 `Router` 和 `Config` 实例，完成站点配置的加载以及路由的派发等关键操作，从而驱动整个应用程序运行。
+   [`App`](/manual/app.md) 类位于 `Sharky\Core` 命名空间下，是框架的应用类，负责整个应用程序的初始化和启动流程。它通过依赖注入获取 `Router` 和 `Config` 实例，完成站点配置的加载以及路由的派发等关键操作，从而驱动整个应用程序运行。
 
-3. ### 容器
+2. ### 容器类
 
    [`Container`](/manual/container.md) 类位于 `Sharky\Core` 命名空间下，是一个简单容器模块。它主要用于管理对象的创建和依赖注入，通过绑定抽象类型与具体实现，能够方便地创建类的实例，并自动解析和注入所需的依赖关系。
 
-4. ### 配置文件*
+3. ### 配置文件*
 
    [`Config`](/manual/config.md) 类位于 `Sharky\Core` 命名空间下，是框架中的配置管理器模块。它主要负责加载框架核心配置文件以及站点配置文件，并提供了根据指定路径获取配置值的功能。通过该类，可以方便地在应用程序中统一管理和获取各种配置信息。
 
@@ -175,35 +194,55 @@ project/
       $isdebug = $config->get('config.isdebug', false);
    ```
 
-5. ### 控制器*
+4. ### 控制器类*
 
    [`Controller`](/manual/controller.md) 类位于 `Sharky\Core` 命名空间下，是框架中的控制器模块，主要负责处理与业务逻辑相关的操作，如获取配置信息以及在出现错误时渲染相应的错误页面等。
 
-6. ### 模型*
+5. ### 数据库相关*
 
    [`Database`](/manual/database.md) 类位于 `Sharky\Core` 命名空间下，是用于与数据库进行交互的核心类。它能够根据配置信息建立数据库连接（支持 `mysqli` 和 `PDO` 两种连接方式），并提供了一系列方法来执行常见的数据库操作，如查询数据、执行SQL语句、获取表字段信息、管理事务以及获取最后插入记录的ID等。
 
-   [`Mode`](/manual/mode.md) 类位于 `Sharky\Core` 命名空间下，是一个用于与数据库进行交互的数据模型模块。它提供了一系列方法来执行常见的数据库操作，如查询、插入、更新、删除等，同时支持条件筛选、分组、分页以及对查询结果的处理等功能。通过该类，可以方便地在PHP应用程序中对数据库中的数据进行操作。
+   [`Model`](/manual/model.md) 类位于 `Sharky\Core` 命名空间下，是一个用于与数据库进行交互的数据模型模块。它提供了一系列方法来执行常见的数据库操作，如查询、插入、更新、删除等，同时支持条件筛选、分组、分页以及对查询结果的处理等功能。通过该类，可以方便地在PHP应用程序中对数据库中的数据进行操作。
 
    [`Collection`](/manual/collection.md) 类位于 `Sharky\Core` 命名空间下，实现了 `Iterator` 接口，主要用于对一组数据项进行管理和操作，提供了诸多便捷的方法来处理集合内的数据，比如添加元素、转换为数组、应用回调函数到每个元素以及遍历集合等操作。 `Model` 类的 `select` 方法查询结果会返回此类。
 
-7. ### 视图*
+6. ### 视图类*
 
    [`Template`](/manual/template.md) 类位于 `Sharky\Libs` 命名空间下，是一个模板引擎类，它通过提供了一系列功能用于加载模板、处理模板中的变量、指令等，并进行渲染输出。主要特性包括支持多语言翻译、模板编译缓存以及多种常见的模板指令处理，如变量输出、继承、块定义、条件判断和循环等。
 
-8. ### 会话*
+7. ### 会话相关*
 
    [`Session`](/manual/session.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于管理Session操作的工具类，它提供了一系列便捷的方法来处理会话相关的操作，如启动会话、设置会话变量、获取会话变量值、检查变量是否存在、删除特定变量以及销毁整个会话等。
 
    [`Cookie`](/manual/cookie.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于管理Cookie操作的工具类。它提供了一系列便捷的方法来设置、获取、检查和删除Cookie，使得在PHP应用程序中对Cookie的处理更加简单和规范化，遵循了良好的编程实践。
 
-9. ### 路由*
+8. ### 路由相关*
 
    [`Route`](/manual/route.md) 类位于 `Sharky\Core` 命名空间下，是框架中的路由管理模块，主要负责加载路由文件、注册路由及路由分组、格式化路径以及根据请求的方法和URI来派遣路由，从而确定要执行的相应控制器方法或回调函数。
 
-10. ### 伪静态*
+   [`Entry`](/manual/route.entry.md) 类位于 `Entry` 类位于 `Sharky\Core\Router` 命名空间，其主要功能是管理路由条目，包括路由的方法、路径、参数、回调函数以及中间件注册。
 
-    #### nginx请参考下方配置，具体以实际情况为准
+   [`Middleware`](/manual/middleware.md) 类位于 `Middleware` 类位于 `Sharky\Core` 命名空间下，它实现 `MiddlewareInterface` 接口，主要用于路由中间件，自定义的路由中间件应继承此类。
+
+9. ### 异常类
+
+   [`SharkyException`](/manual/exception.md) 类位于 `Sharky\Core` 命名空间下，它继承自 `\Exception` 类，主要用于统一处理应用程序中的异常和错误信息。通过设置全局的异常处理函数和错误处理函数，能够根据配置文件中的调试模式设置来决定如何展示错误信息，并且在出现异常或错误时渲染相应的错误页面。
+
+10. ### 扩展功能
+
+      [`JWT`](/manual/jwt.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于生成 `JSON Web Token` 的工具类，它提供了生成令牌，刷新令牌，验证令牌等方法，方便实现用户身份验证。
+
+      [`MFA`](/manual/mfa.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于 `MFA` 多因素身份验证的工具类，它提供了生成共享密钥，计算密码，生成二维码链接等方法，方便实现多因素身份验证。
+
+11. ### 其他工具
+
+      [`Array_Utils`](/manual/array_utils.md) 类位于 `Sharky\Utils` 命名空间下，是一个提供多维数组操作相关实用功能的工具类。它包含了用于深度合并数组、判断数组是否为关联数组、获取数组指定路径的值以及设置数组指定路径的值等方法，方便在处理多维数组时进行常见的操作。
+
+## 五、进阶配置
+
+1. ### 伪静态*
+
+   #### nginx请参考下方配置，具体以实际情况为准
 
     ```` nginx
     server {
@@ -224,12 +263,13 @@ project/
              fastcgi_pass unix:/var/run/php/php8.2-fpm.sock;
              fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
              include fastcgi_params;
-             fastcgi_intercept_errors on;
+             # 将拦截 FastCGI 服务器返回的错误状态码，根据Nginx配置进行处理
+             # fastcgi_intercept_errors on;
           }
     }
     ````
 
-    #### apache请参考下方配置，具体以实际情况为准
+   #### apache请参考下方配置，具体以实际情况为准
 
     确保LoadModule php_module modules/libphp.so等类似模块已启用
 
@@ -268,9 +308,3 @@ project/
     RewriteCond %{REQUEST_FILENAME} !-d
     RewriteRule ^(.*)$ /index.php?$1 [L,QSA]
     ````
-
-11. ### 其他
-
-    [`SharkyException`](/manual/exception.md) 类位于 `Sharky\Core` 命名空间下，它继承自 `\Exception` 类，主要用于统一处理应用程序中的异常和错误信息。通过设置全局的异常处理函数和错误处理函数，能够根据配置文件中的调试模式设置来决定如何展示错误信息，并且在出现异常或错误时渲染相应的错误页面。
-
-    [`Array_Utils`](/manual/array_utils.md) 类位于 `Sharky\Utils` 命名空间下，是一个提供多维数组操作相关实用功能的工具类。它包含了用于深度合并数组、判断数组是否为关联数组、获取数组指定路径的值以及设置数组指定路径的值等方法，方便在处理多维数组时进行常见的操作。

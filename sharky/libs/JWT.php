@@ -15,8 +15,8 @@ class JWT {
     private $algorithm;
 
     public function __construct($secretKey, $algorithm = 'HS256') {
-        $this->$secretKey = $secretKey;
-        $this->$algorithm = $algorithm;
+        $this->secretKey = $secretKey;
+        $this->algorithm = $algorithm;
     }
 
     public function encode($payload, $exp = 3600) {
@@ -26,7 +26,7 @@ class JWT {
 
         $base64UrlHeader = self::base64UrlEncode($header);
         $base64UrlPayload = self::base64UrlEncode($payload);
-        $signature = self::sign($base64UrlHeader . "." . $base64UrlPayload, $this->algorithm);
+        $signature = self::sign($this->secretKey,$base64UrlHeader . "." . $base64UrlPayload, $this->algorithm);
 
         return $base64UrlHeader . "." . $base64UrlPayload . "." . $signature;
     }
@@ -41,7 +41,7 @@ class JWT {
         $payload = json_decode(self::base64UrlDecode($parts[1]), true);
         $signature = $parts[2];
 
-        if (self::sign($parts[0] . "." . $parts[1], $header['alg']) !== $signature) {
+        if (self::sign($this->secretKey,$parts[0] . "." . $parts[1], $header['alg']) !== $signature) {
             throw new Exception('Invalid signature');
         }
 
@@ -58,8 +58,8 @@ class JWT {
         return $this->encode($payload, $exp);
     }
 
-    private static function sign($data, $algorithm) {
-        return self::base64UrlEncode(hash_hmac(self::getAlgorithm($algorithm), $data, self::$secretKey, true));
+    private static function sign($secretKey, $data, $algorithm) {
+        return self::base64UrlEncode(hash_hmac(self::getAlgorithm($algorithm), $data, $secretKey, true));
     }
 
     private static function getAlgorithm($algorithm) {

@@ -29,12 +29,12 @@ class MFA
         if (!preg_match('/^[A-Z2-7=]+$/', $secret)) {
             throw new InvalidArgumentException('密钥必须是一个 Base32 编码的字符串。');
         }
-        
+
         $this->secret = $secret;
         $this->secretKey = $this->base32Decode($secret);
         if ($this->secretKey === false) {
             throw new InvalidArgumentException('无效的 Base32 编码密钥。');
-        };
+        }
 
         if ($slice <= 0 || !is_int($slice)) {
             throw new InvalidArgumentException('时间片长度必须是一个大于0的整数。');
@@ -72,7 +72,7 @@ class MFA
         $url = "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}";
         return $url;
     }
-   
+
     /**
      * 解码一个 Base32 编码的字符串。
      * @param string $secret Base32 编码的字符串
@@ -80,21 +80,21 @@ class MFA
      */
     private static function base32Decode($secret)
     {
+        // $paddingCharCount = substr_count($secret, '=');
+        // $allowedValues = [6, 4, 3, 1, 0];
+        // if (!in_array($paddingCharCount, $allowedValues)) {
+        //     return false;
+        // }
+        // for ($i = 0; $i < 4; $i++) {
+        //     if (
+        //         $paddingCharCount == $allowedValues[$i] &&
+        //         substr($secret, -($allowedValues[$i])) != str_repeat('=', $allowedValues[$i])
+        //     ) {
+        //         return false;
+        //     }
+        // }
+        //$secret = str_replace('=', '', $secret);
         $alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
-        $paddingCharCount = substr_count($secret, '=');
-        $allowedValues = [6, 4, 3, 1, 0];
-        if (!in_array($paddingCharCount, $allowedValues)) {
-            return false;
-        }
-        for ($i = 0; $i < 4; $i++) {
-            if (
-                $paddingCharCount == $allowedValues[$i] &&
-                substr($secret, -($allowedValues[$i])) != str_repeat('=', $allowedValues[$i])
-            ) {
-                return false;
-            }
-        }
-        $secret = str_replace('=', '', $secret);
         $binaryString = '';
         for ($i = 0; $i < strlen($secret); $i += 8) {
             $x = '';
@@ -146,13 +146,13 @@ class MFA
         $slice = $this->slice ?: 30; // 默认时间片长度为30秒
         $timeSlice = floor($ctime / $slice); // 当前时间片
         $rest = $slice - ($ctime % $slice); // 距离下一个令牌的时间
-        for ($i = - abs($faultTol); $i <= abs($faultTol); $i++) {
+        for ($i = -abs($faultTol); $i <= abs($faultTol); $i++) {
             $totpSlice = $timeSlice + $i;
             $totps[] = self::getHOTPToken($this->secretKey, $totpSlice);
         }
 
         return [
-             // "token" => $totps[intdiv(count($totps), 2)],
+            // "token" => $totps[intdiv(count($totps), 2)],
             "token" => $totps,
             "rest" => $rest
         ];
