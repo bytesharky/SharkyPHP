@@ -80,18 +80,30 @@ class HomeController extends Controller
     public function extension()
     {
         $mfa = new MFA('JBSWY3DPEHPK3PXP');
-        $tokens = $mfa->getTOTPToken();
-        $token = $tokens['token'][1];
-        $rest = $tokens['rest'];
 
         $content = "目前我添加了两个扩展组件\n\n" .
             "JWT：JSON Web Token，方便实现API 认证、单点登录等场景\n\n" .
-            "MFA：Multi-Factor Authentication，方便实现两步身份验证\n\n" .
-            "兼容：Google Authenticator、Microsoft Authenticator\n\n" .
-            "当前的动态密码是：<span style=\"color: red;\">{$token}</span>，剩余时间：{$rest}\n\n";
+            "MFA：Multi-Factor Authentication，方便实现两步身份验证\n\n";
         
         $imgurl = 'https://www.doffish.com/QRCode.do?text=' . $mfa->getQRCodeUrl('MFA 测试');
 
         $this->display('home/index.php', ['title' => 'Extension', 'content' => $content, 'imgurl' => $imgurl]);
+    }
+
+    public function getmfa()
+    {
+        $mfa = new MFA('JBSWY3DPEHPK3PXP');
+        $tokens = $mfa->getTOTPToken();
+        $token = $tokens['token'][1];
+        $rest = $tokens['rest'];
+
+        return json_encode([
+            'code' => 200,
+            'msg' => 'success',
+            'data' => [
+                'token' => $token,
+                'rest' => $rest
+            ]
+        ]);
     }
 }

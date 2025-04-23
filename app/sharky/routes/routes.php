@@ -19,6 +19,7 @@ Router::reg('ALL', '/about', [HomeController::class, 'about']);
 Router::reg(['GET','POST'], '/view', [HomeController::class, 'view']);
 Router::reg(['GET','POST'], '/database', [HomeController::class, 'database']);
 Router::reg('GET','/extension',[HomeController::class, 'extension']);
+Router::reg('GET','/getmfa',[HomeController::class, 'getmfa']);
 
 /* 路由中间件注册示例 */
 Router::reg(['GET','POST'], '/auth', [HomeController::class, 'auth'])->middleware([
