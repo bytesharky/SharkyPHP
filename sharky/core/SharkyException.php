@@ -3,8 +3,8 @@
 /**
  * @description 异常类
  * @author Sharky
- * @date 2025-3-22
- * @version 1.1.0
+ * @date 2025-4-25
+ * @version 1.3.1
  */
 
 namespace Sharky\Core;
@@ -57,10 +57,13 @@ class SharkyException extends Exception{
     // 统一处理异常信息
     public static function unityExceptionHandler($exception)
     {
+        if (!self::$isInit) {
+            self::init();
+        }
         // 调试打开时显示错误信息和堆栈跟踪
         $errorMessage = $exception->getMessage();
         $traceStr = $exception->getTraceAsString();
-        self::renderError($errorMessage, $traceStr);
+        self::render($errorMessage, $traceStr);
     }
 
     // 统一处错误常信息
@@ -80,14 +83,15 @@ class SharkyException extends Exception{
             $traceStr .= "#$index $class$function() $file:$line" . PHP_EOL;
         }
 
-        self::renderError($errorMessage, $traceStr);
+        self::render($errorMessage, $traceStr);
     }
 
     // 输出错误页面
-    private static function renderError($message, $traceStr)
+    private static function render($message, $traceStr)
     {
         // 清空缓冲，以免之前的输出破坏错误页面
         ob_clean();
+        header('Content-Type: text/html; charset=utf-8');
         http_response_code(500);
         // 调试关闭时显示友好错误页面,否则输出详细信息
         if (!self::$isDebug) {

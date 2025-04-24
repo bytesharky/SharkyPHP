@@ -216,6 +216,10 @@ project/
 
    [`Cookie`](/manual/cookie.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于管理Cookie操作的工具类。它提供了一系列便捷的方法来设置、获取、检查和删除Cookie，使得在PHP应用程序中对Cookie的处理更加简单和规范化，遵循了良好的编程实践。
 
+   [`Request`](/manual/request.md) `Request` 类位于 `Sharky\Core` 命名空间，用于封装 HTTP 请求的相关信息，包括请求参数、URI 和请求方法，同时还能处理自定义属性。
+
+   [`Response`](/manual/response.md) `Response` 类位于 `Sharky\Core` 命名空间，用于封装 HTTP 响应的相关信息，包括状态码、响应头、响应体。
+
 8. ### 路由相关*
 
    [`Route`](/manual/route.md) 类位于 `Sharky\Core` 命名空间下，是框架中的路由管理模块，主要负责加载路由文件、注册路由及路由分组、格式化路径以及根据请求的方法和URI来派遣路由，从而确定要执行的相应控制器方法或回调函数。

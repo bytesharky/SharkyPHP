@@ -50,3 +50,13 @@ public function __set($key, $value)
 ```php
 $request->newAttribute = 'new value';
 ```
+
+---
+
+本文档是在 AI 生成的内容的基础上修订，其信息不保证完全准确。
+
+在使用过程中，如果您发现了任何问题或者有疑问，可以通过 new issues 的方式反馈，我们会及时处理。感谢您的理解与支持。
+
+修订：2025-4-25 5点
+
+[返回目录](/SharkyPHP.md)

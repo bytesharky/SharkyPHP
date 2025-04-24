@@ -3,8 +3,8 @@
 /**
  * @description 路由管理模块
  * @author Sharky
- * @date 2025-3-21
- * @version 1.1.0
+ * @date 2025-4-25
+ * @version 1.3.1
  */
 
 
@@ -167,8 +167,7 @@ class Router
         $method = strtoupper($method);
 
         foreach (self::$routes as $route) {
-            if (preg_match($route->path, $uri, $params)) {
-                // 找到了路由
+            if (preg_match($route->path, $uri,  $matches)) {
                 $routeExist = true;
                 if (
                     ('ALL' === $route->method) ||
@@ -177,43 +176,50 @@ class Router
                         in_array('ALL', $route->method) ||
                         in_array($method, $route->method)))
                 ) {
-                    array_shift($params);
+                    array_shift($matches);
                     $length = count($route->params);
-                    $params_ = array_pad(array_slice($params, 0, $length), $length, null);
-                    $params_ = array_combine($route->params, $params_);
+                    $params = array_pad(array_slice($matches, 0, $length), $length, null);
+                    $params = array_combine($route->params, $params);
                     
                     // 创建请求上下文
-                    $request = Container::getInstance()->make('request', [
-                        'params' => $params_,
+                    $request = Container::getInstance()->make(Request::class, [
+                        'params' => $params,
                         'uri' => $uri,
                         'method' => $method
                     ]);
 
-                    
                     // 执行中间件链
                     $result = $this->runMiddlewareChain($route->middleware, $request, function($request) use ($route) {
                         // 执行控制器方法
                         return $this->callControllerMethod($route->callback, $request->params);
                     });
-                    
-                    return $this->renderRouter($result);
+
+                    // 如果结果是响应对象，直接返回
+                    if ($result instanceof Response) {
+                        return $result;
+                    }
+
+                    // 否则创建响应上下文
+                    $response = Container::getInstance()->make(Response::class);
+                    return $response->render($result);
                 }
             }
         }
 
-        $request = Container::getInstance()->make('request', [
+        $response = Container::getInstance()->make(Response::class);
+        $request = Container::getInstance()->make(Request::class, [
             'params' => [],
             'uri' => $uri,
-            'method' => $method
+            'method' => $method,
         ]);
 
         if ($routeExist) {
             // 返回405 Method Not Allowed
-            return $this->renderRouter([
-                'code' => 405,
-                'status' => "fail",
-                'message' => strtoupper($method) . ' Method Not Allowed'
-            ]);
+            return $response->render([
+                'message' => 'Method Not Allowed',
+                'method' => $method,
+                'uri' => $uri
+            ], 405);
         } else {
             $container = Container::getInstance();
             $config = $container->make('config');
@@ -222,11 +228,11 @@ class Router
                 throw new RouteNotFoundException("Route Not Found\n\n没有找到匹配的路由!\n\n$uri");
             }
             // 没有匹配的路由，返回404
-            return $this->renderRouter([
-                'code' => 404,
-                'status' => "fail",
-                'message' => 'Page Not Found'
-            ]);
+            return $response->render([
+                'message' => 'Route Not Found',
+                'method' => $method,
+                'uri' => $uri
+            ], 404);
         }
     }
 
@@ -270,12 +276,6 @@ class Router
         return call_user_func_array($callback, $params);
     }
 
-    private function renderRouter($res)
-    {
-        $renderRouter = ['Sharky\\Core\\Controller', 'renderRouter'];
-        return $this->callControllerMethod($renderRouter, [$res]);
-    }
-    
     // 便捷方法 - GET
     public static function get($path, $callback, $matchMode = -1)
     {

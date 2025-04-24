@@ -3,8 +3,8 @@
 /**
  * @description 启动文件
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-4-25
+ * @version 1.3.1
  */
 
 use Sharky\Core\Container;
@@ -12,6 +12,11 @@ use Sharky\Core\Router;
 
 // 注册自动加载函数
 spl_autoload_register('autoloadClasses');
+
+// 加载全局函数
+if (file_exists(SITE_ROOT . '/common.php')) {
+    require_once SITE_ROOT . '/common.php';
+}
 
 // 加载路由
 Router::loadRoutes();

@@ -8,7 +8,7 @@
  */
 
 return [
-    'isdebug'           => env('APP_DEBUG', false),
-    'multi_site'        => true,
-    'restful'           => "html"
+    'isdebug'           => filter_var(env('APP_DEBUG', false), FILTER_VALIDATE_BOOLEAN),
+    'multi_site'        => filter_var(env('APP_MULTI_SITE', false), FILTER_VALIDATE_BOOLEAN),
+    'restful'           => env('APP_RESTFUL', 'html'),
 ];

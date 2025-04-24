@@ -3,9 +3,12 @@
 /**
  * @description 公共函数文件
  * @author Sharky
- * @date 2025-4-23
- * @version 1.3.0
+ * @date 2025-4-25
+ * @version 1.3.1
  */
+
+ use Sharky\Core\Container;
+ use Sharky\Core\Response;
 
 // 获取站点路径
 function getSitePath(){
@@ -18,7 +21,9 @@ function getSitePath(){
         $pattern = "/.?{$mainDomain}$/";
         $domain = parse_url($_SERVER['HTTP_HOST'], PHP_URL_HOST);
         $subDomain = preg_replace($pattern, '', $domain??"");
-
+        if (!is_array($sitesCfg["sites"])){
+            Sharky\Core\SharkyException::unityExceptionHandler(new \Exception("您已开启多站点模式，但是没有可用的站点，请检查配置文件"));
+        }
         if (in_array($domain , array_keys($sitesCfg["sites"])) ){
             return $sitesCfg["sites"][$domain];
         }elseif (in_array($subDomain , array_keys($sitesCfg["sites"])) ){
@@ -94,4 +99,16 @@ function loadEnv($filePath = '../.env') {
             $_ENV[$key] = $value;
         }
     }
+}
+
+function redirect($path, $status = 302)
+{
+    $response = Container::getInstance()->make(Response::class);
+    return $response->redirect($path, $status);
+}
+
+function response($data = '', $status = 200)
+{
+    $response = Container::getInstance()->make(Response::class);
+    return $response->render($data, $status);
 }

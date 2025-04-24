@@ -42,7 +42,7 @@
             {% if $imgurl??false %}
             <p style="text-align: center;">使用以下APP扫码测试<br>Google Authenticator<br>Microsoft Authenticator</p>
             <p id="mfa-div">当前的动态密码是：<span id="mfa-code" style="color: red;"></span>，剩余时间：<span id="timer"></p>
-            <p><img class="mfa-img" src="{{ imgurl }}" /></p>
+            <p><img class="mfa-img" src="/assets/images/qrcode.png" /></p>
             {% endif %}
         </pre>
         {% if $html??false %}
@@ -54,10 +54,9 @@
                 var timer = document.getElementById("timer");
                 var interval = setInterval(() => {
                     var rest = parseInt(timer.innerText);
-                    if (rest > 1) {
-                        rest--;
-                        timer.innerText = rest;
-                    } else {
+                    rest--;
+                    timer.innerText = rest;
+                    if (rest <= 0) {
                         clearInterval(interval);
                         refresh();
                     }
@@ -89,7 +88,6 @@
         </script>
         {% endif %}
     </div>
-    <hr>
     <div class="version">
         <p>{{ PROJECT }} Version {{ VERSION }}</p>
         <p>{{ COPYRIGHT }}</p>

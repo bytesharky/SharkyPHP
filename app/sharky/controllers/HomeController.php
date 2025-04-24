@@ -85,7 +85,7 @@ class HomeController extends Controller
             "JWT：JSON Web Token，方便实现API 认证、单点登录等场景\n\n" .
             "MFA：Multi-Factor Authentication，方便实现两步身份验证\n\n";
         
-        $imgurl = 'https://www.doffish.com/QRCode.do?text=' . $mfa->getQRCodeUrl('MFA 测试');
+        $imgurl = 'https://www.doffish.com/QRCode.do?text=' . urlencode($mfa->getQRCodeUrl('MFA 测试'));
 
         $this->display('home/index.php', ['title' => 'Extension', 'content' => $content, 'imgurl' => $imgurl]);
     }
