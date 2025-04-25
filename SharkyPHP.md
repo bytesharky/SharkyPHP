@@ -137,7 +137,7 @@ project/
 
 1. #### 使用 `composer` 安装
 
-   建议使用 `composer create-project sharky/sharky-php` 命令安装，当然也可以克隆下面的仓库地址
+   建议使用 `composer create-project sharky/sharky-php` 命令安装
 
 2. #### 直接下载安装
 
@@ -232,13 +232,17 @@ project/
 
    [`SharkyException`](/manual/exception.md) 类位于 `Sharky\Core` 命名空间下，它继承自 `\Exception` 类，主要用于统一处理应用程序中的异常和错误信息。通过设置全局的异常处理函数和错误处理函数，能够根据配置文件中的调试模式设置来决定如何展示错误信息，并且在出现异常或错误时渲染相应的错误页面。
 
-10. ### 扩展功能
+10. ### 缓存类
+
+      [`Cache`](/manual/cache.md) 类位于 `Sharky\Core` 命名空间下，是一个用于管理缓存的工具类，它支持文件缓存和 Redis 缓存两种方式，并且可以根据配置灵活切换。
+
+11. ### 扩展功能
 
       [`JWT`](/manual/jwt.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于生成 `JSON Web Token` 的工具类，它提供了生成令牌，刷新令牌，验证令牌等方法，方便实现用户身份验证。
 
       [`MFA`](/manual/mfa.md) 类位于 `Sharky\Libs` 命名空间下，是一个用于 `MFA` 多因素身份验证的工具类，它提供了生成共享密钥，计算密码，生成二维码链接等方法，方便实现多因素身份验证。
 
-11. ### 其他工具
+12. ### 其他工具
 
       [`Array_Utils`](/manual/array_utils.md) 类位于 `Sharky\Utils` 命名空间下，是一个提供多维数组操作相关实用功能的工具类。它包含了用于深度合并数组、判断数组是否为关联数组、获取数组指定路径的值以及设置数组指定路径的值等方法，方便在处理多维数组时进行常见的操作。
 

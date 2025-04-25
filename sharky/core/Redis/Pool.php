@@ -1,5 +1,12 @@
 <?php
 
+/**
+ * @description Redis数据库连接池
+ * @author Sharky
+ * @date 2025-4-25
+ * @version 1.3.1
+ */
+
 namespace Sharky\Core\Redis;
 
 class Pool{
@@ -7,7 +14,7 @@ class Pool{
     private $slave = null;
     private $sticky = null;
     private $config = null;
-    private $prefix = '';
+    private $prefix = 'sharky_';
     private $database = 0;
 
     public function __construct($config)
@@ -28,6 +35,7 @@ class Pool{
 
     public function select($db) {
         $this->database = $db;  
+        return $this;
     }
 
     public function slave(): Connect
@@ -58,6 +66,7 @@ class Pool{
 
     public function master(): Connect
     {
+
         if (isset($this->config['master'])) {
             $host = $this->config['master'];
         } else {
