@@ -3,8 +3,8 @@
 /**
  * @description Redis配置文件
  * @author Sharky
- * @date 2025-3-25
- * @version 1.2.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 // App下的configs会覆盖此配置

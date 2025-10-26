@@ -1,14 +1,18 @@
 <?php
+
 /**
  * @description 数据库连接池
  * @author Sharky
- * @date 2025-4-23
- * @version 1.3.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core\Database;
 
-class Pool{
+use Sharky\Exceptions\ConfigNotFoundException;
+
+class Pool
+{
     private $master = null;
     private $slave = null;
     private $sticky = null;
@@ -19,11 +23,11 @@ class Pool{
         $this->config = $config;
     }
 
-    private function connect($host, $type, $user, $pass, $name, $port, $charset): Connect
+    private function connect($host, $type, $user, $pass, $name, $port, $charset, $timeou): Connect
     {
-        return new Connect($host, $type, $user, $pass, $name, $port, $charset);
+        return new Connect($host, $type, $user, $pass, $name, $port, $charset, $timeou);
     }
- 
+
     public function setSticky($sticky): Connect
     {
         $this->sticky = $sticky;
@@ -35,45 +39,51 @@ class Pool{
         if ($this->sticky) {
             return $this->sticky;
         }
-        
+
         if (isset($this->config['slave'])) {
             $host = $this->config['slave'];
         } else if (isset($this->config['master'])) {
             $host = $this->config['master'];
         } else {
-            new \Exception("数据库配置master不存在");
+            new ConfigNotFoundException("Mysql 从数据库配置 slave 不存在");
         }
 
-        $this->slave = $this->connect(
-            $host,
-            $this->config['type'],
-            $this->config['username'],
-            $this->config['password'],
-            $this->config['database'],
-            $this->config['port'],
-            $this->config['charset']
-        );
-        
+        if (empty($this->slave)) {
+            $this->slave = $this->connect(
+                $host,
+                $this->config['type'],
+                $this->config['username'],
+                $this->config['password'],
+                $this->config['database'],
+                $this->config['port'],
+                $this->config['charset'],
+                $this->config['timeout']
+            );
+        }
+
         return $this->slave;
-    }   
+    }
 
     public function master(): Connect
     {
         if (isset($this->config['master'])) {
             $host = $this->config['master'];
         } else {
-            new \Exception("数据库配置master不存在");
+            new ConfigNotFoundException("Mysql 主数据库配置 master 不存在");
         }
 
-        $this->master = $this->connect(
-            $host,
-            $this->config['type'],
-            $this->config['username'],
-            $this->config['password'],
-            $this->config['database'],
-            $this->config['port'],
-            $this->config['charset']
-        );
+        if (empty($this->master)) {
+            $this->master = $this->connect(
+                $host,
+                $this->config['type'],
+                $this->config['username'],
+                $this->config['password'],
+                $this->config['database'],
+                $this->config['port'],
+                $this->config['charset'],
+                $this->config['timeout']
+            );
+        }
 
         return $this->master;
     }

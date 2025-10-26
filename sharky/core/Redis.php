@@ -3,15 +3,15 @@
 /**
  * @description Redis数据库操作类
  * @author Sharky
- * @date 2025-4-25
- * @version 1.3.1
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
 
 use Sharky\Core\Redis\Pool;
 use Sharky\Core\Redis\Connect;
-use Exception;
+use Sharky\Exceptions\ConfigNotFoundException;
 
 class Redis
 {
@@ -28,15 +28,10 @@ class Redis
             return self::$config;
         }
 
-        $container = Container::getInstance();
-        if (!$container->make('config')) {
-            throw new Exception("Config service not found in container");
-        }
-
-        self::$config = $container->make('config')->get('redis', []);
+        self::$config = Container::getInstance()->make('config')->get('redis', []);
 
         if (empty(self::$config)) {
-            throw new Exception("Redis configuration not found");
+            throw new ConfigNotFoundException("Redis 数据库配置不存在");
         }
 
         return self::$config;
@@ -46,7 +41,6 @@ class Redis
      * 获取Redis连接池实例
      * @param string $name 配置名称
      * @return Pool
-     * @throws Exception
      */
     public static function connects(string $name = 'default'): Pool
     {
@@ -57,12 +51,12 @@ class Redis
         $config = self::loadConfig();
 
         if (!isset($config[$name])) {
-            throw new Exception("Redis configuration '{$name}' not found");
+            throw new ConfigNotFoundException("Redis 数据配置 {$name} 不存在");
         }
 
         // 创建连接池
         $pool = new Pool($config[$name]);
-        
+
         // 设置前缀
         if (isset($config[$name]['prefix'])) {
             $pool->prefix($config[$name]['prefix']);
@@ -76,7 +70,6 @@ class Redis
     /**
      * 获取从库连接
      * @return Connect
-     * @throws Exception
      */
     public static function slave(): Connect
     {
@@ -86,7 +79,6 @@ class Redis
     /**
      * 获取主库连接
      * @return Connect
-     * @throws Exception
      */
     public static function master(): Connect
     {
@@ -102,8 +94,6 @@ class Redis
 
         return $pool->master();
     }
-
-    // ==================== 基本操作 ====================
 
     /**
      * 设置键前缀
@@ -125,7 +115,7 @@ class Redis
         return self::connects()->select($db);
     }
 
-    // ==================== 字符串操作 ====================
+    // ==================== 基本键操作 ====================
 
     /**
      * 设置键值
@@ -144,7 +134,7 @@ class Redis
      * @param string $key
      * @return mixed
      */
-    public static function get(string $key)
+    public static function get(string $key): mixed
     {
         return self::slave()->get($key);
     }
@@ -154,7 +144,7 @@ class Redis
      * @param string|array $key
      * @return int
      */
-    public static function delete($key): int
+    public static function delete(string $key): int
     {
         return self::master()->delete($key);
     }
@@ -202,6 +192,18 @@ class Redis
     }
 
     /**
+     * 移除键的过期时间
+     * @param string $key 键名
+     * @return bool
+     */
+    public function persist(string $key)
+    {
+        return self::master()->persist($key);
+    }
+
+    // ==================== 字符串操作 ====================
+
+    /**
      * 键不存在时设置值
      * @param string $key
      * @param mixed $value
@@ -230,6 +232,28 @@ class Redis
     public static function mget(array $keys): array
     {
         return self::slave()->mget($keys);
+    }
+
+    /**
+     * 值自增
+     * @param string $key 键名
+     * @param int $increment 增量
+     * @return int 自增后的值
+     */
+    public static function incr(string $key, int $increment = 1)
+    {
+        return self::master()->incr($key, $increment);
+    }
+
+    /**
+     * 值自减
+     * @param string $key 键名
+     * @param int $decrement 减量
+     * @return int 自减后的值
+     */
+    public static function decr(string $key, int $decrement = 1)
+    {
+        return self::master()->decr($key, $decrement);
     }
 
     // ==================== 哈希操作 ====================
@@ -289,6 +313,28 @@ class Redis
         return self::slave()->hGetAll($key);
     }
 
+    /**
+     * 删除哈希字段
+     * @param string $key 键名
+     * @param string|array $fields 字段名或字段名数组
+     * @return int 删除的字段数量
+     */
+    public static function hDel(string $key, array|string $fields)
+    {
+        return self::master()->hDel($key, $fields);
+    }
+
+    /**
+     * 哈希字段自增
+     * @param string $key 键名
+     * @param string $field 字段名
+     * @param int $increment 增量
+     * @return int 自增后的值
+     */
+    public static function hIncrBy(string $key, string $field, int $increment = 1)
+    {
+        return self::master()->hIncrBy($key, $field, $increment);
+    }
     // ==================== 列表操作 ====================
 
     /**
@@ -343,6 +389,17 @@ class Redis
         return self::slave()->lLen($key);
     }
 
+    /**
+     * 获取列表片段
+     * @param string $key 键名
+     * @param int $start 起始索引
+     * @param int $end 结束索引
+     * @return array
+     */
+    public function lRange(string $key, int $start = 0, int $end = -1)
+    {
+        return self::slave()->lRange($key, $start, $end);
+    }
     // ==================== 集合操作 ====================
 
     /**
@@ -354,6 +411,17 @@ class Redis
     public static function sAdd(string $key, $value): int
     {
         return self::master()->sAdd($key, $value);
+    }
+
+    /**
+     * 删除集合元素
+     * @param string $key 键名
+     * @param mixed $value 值
+     * @return int 删除的元素数量
+     */
+    public function sRem(string $key, $value)
+    {
+        return self::master()->sRem($key, $value);
     }
 
     /**
@@ -404,11 +472,23 @@ class Redis
         return self::slave()->zRange($key, $start, $end, $withScores);
     }
 
+    /**
+     * 获取有序集合元素按分数逆序排序
+     * @param string $key 键名
+     * @param int $start 起始排名
+     * @param int $end 结束排名
+     * @param bool $withScores 是否返回分数
+     * @return array
+     */
+    public function zRevRange(string $key, int $start = 0, int $end = -1, bool $withScores = false)
+    {
+        return self::slave()->zRevRange($key, $start, $end, $withScores);
+    }
+
     // ==================== 事务操作 ====================
 
     /**
      * 开始事务
-     * @return \Redis
      */
     public static function multi()
     {
@@ -424,6 +504,14 @@ class Redis
         return self::master()->exec();
     }
 
+    /**
+     * 取消事务
+     * @return bool
+     */
+    public function discard()
+    {
+        return self::master()->discard();
+    }
     // ==================== 服务器操作 ====================
 
     /**
@@ -433,6 +521,15 @@ class Redis
     public static function flushDB(): bool
     {
         return self::master()->flushDB();
+    }
+
+    /**
+     * 清空所有数据库
+     * @return bool
+     */
+    public function flushAll()
+    {
+        return self::master()->flushAll();
     }
 
     /**

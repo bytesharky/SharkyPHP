@@ -3,8 +3,8 @@
 /**
  * @description 数据集合模块
  * @author Sharky
- * @date 2024-11-5
- * @version 1.0.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 
@@ -16,14 +16,14 @@ class Collection implements Iterator
 {
     protected $items = [];
     private $position = 0;
-    
+
     public function __construct(array $items = [])
     {
         $this->items = $items;
     }
 
     // 将集合转换为数组
-    public function toArray()
+    public function toArray(): array
     {
         return array_map(function ($item) {
             return $item instanceof Model ? $item->toArray() : $item;
@@ -38,32 +38,36 @@ class Collection implements Iterator
     }
 
     // 添加单个模型
-    public function add($item)
+    public function add($item): void
     {
         $this->items[] = $item;
     }
 
     // 获取所有项
-    public function all()
+    public function all(): array
     {
         return $this->items;
     }
 
     // 返回集合的数量
-    public function count(){
+    public function count(): int
+    {
         return count($this->items);
     }
 
     // 添加count属性的访问器方法（getter）
-    public function __get($name) {
+    public function __get($name): int|null
+    {
         if ($name === 'count') {
             return count($this->items);
         }
         return null;
     }
 
-    public function __debugInfo() {
+    public function __debugInfo(): array
+    {
         return [
+            "records" => array_map(fn($item) => $item->toArray(), $this->items),
             "count" => count($this->items),
         ];
     }

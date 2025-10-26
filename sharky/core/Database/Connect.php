@@ -1,40 +1,54 @@
 <?php
+
 /**
  * @description 数据库连接类
  * @author Sharky
- * @date 2025-4-23
- * @version 1.3.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core\Database;
 
-use Exception;
+use mysqli;
+use PDO;
+use PDOException;
+use InvalidArgumentException;
+use Sharky\Exceptions\ConnectionFailedException;
+use Sharky\Exceptions\UnsupportedTypeException;
 
 class Connect
 {
     private $connection = null;
-    private $connectType = 'mysqli';
+    private $connectType = 'PDO';
     private $pdoStatement;
+    private $transactionLevel = 0;
 
-    public function __construct($host, $type, $user, $pass, $name, $port, $charset)
+    public function __construct($host, $type, $user, $pass, $name, $port, $charset, $timeout)
     {
-        if (!in_array($type, ['mysqli','PDO'])){
-            throw new Exception("不支持的链接类型: {$type}");
+        $type = strtolower($type);
+        if (!in_array($type, ['mysqli', 'pdo'])) {
+            throw new UnsupportedTypeException("不支持的链接类型: {$type}");
         }
 
         $this->connectType = $type;
-        
+
         if ($this->connectType === 'mysqli') {
-            $this->connection = new \mysqli(
+
+            // 启用严格模式
+            mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+
+            $this->connection = new mysqli();
+
+            $this->connection->options(MYSQLI_OPT_CONNECT_TIMEOUT, $timeout);
+            $this->connection->real_connect(
                 $host,
                 $user,
                 $pass,
                 $name,
                 $port
             );
-
             if ($this->connection->connect_error) {
-                throw new \Exception("Connection failed: " . $this->connection->connect_error);
+                throw new ConnectionFailedException("Connection failed: " . $this->connection->connect_error);
             }
 
             $this->connection->set_charset($charset);
@@ -43,24 +57,34 @@ class Connect
                 "mysql:host={$host}",
                 "port={$port}",
                 "dbname={$name}",
-                "charset={$charset}"
+                "charset={$charset}",
+                "timeout={$timeout}"
             ];
 
             $dsn = implode(';', $dsnParts);
 
             try {
-                $this->connection = new \PDO($dsn, $user, $pass, [
-                    \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
-                    \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC
+                $this->connection = new PDO($dsn, $user, $pass, [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                 ]);
-            } catch (\PDOException $e) {
-                throw new \Exception("Connection failed: " . $e->getMessage());
+
+            } catch (PDOException $e) {
+                throw new ConnectionFailedException("Connection failed: " . $e->getMessage());
             }
         }
     }
 
-    public function query($sql, $params = [])
+    public function query($sql, $params = []): mixed
     {
+        if (is_array($sql)) {
+            throw new InvalidArgumentException('SQL 语句不能是数组');
+        }
+        foreach ($params as $key => $value) {
+            if (is_array($value)) {
+                throw new InvalidArgumentException("SQL: {$sql}\n参数 $key 不能是数组");
+            }
+        }
         if ($this->connectType === 'mysqli') {
             $stmt = $this->connection->prepare($sql);
 
@@ -81,7 +105,7 @@ class Connect
         }
     }
 
-    public function execute($sql, $params = [])
+    public function execute($sql, $params = []): int
     {
         if ($this->connectType === 'mysqli') {
             $stmt = $this->connection->prepare($sql);
@@ -103,74 +127,120 @@ class Connect
     public function getFields($table)
     {
         if ($this->connectType === 'mysqli') {
-
             $result = $this->connection->query("SHOW COLUMNS FROM {$table}");
-            return array_column($result->fetch_all(MYSQLI_ASSOC), 'Field');
-        } else {
+            $fields = [];
 
+            while ($row = $result->fetch_assoc()) {
+                $fields[] = $row['Field'];
+            }
+
+            return $fields;
+        } else {
             $stmt = $this->connection->query("SHOW COLUMNS FROM {$table}");
             return array_column($stmt->fetchAll(), 'Field');
         }
     }
 
-    public function getPrimarys($table)
+    public function getPrimarys($table): array
     {
+        //$sql = "SHOW COLUMNS FROM {$table}"; => // Field 
+        $sql = "SHOW INDEX FROM `{$table}` WHERE Key_name = 'PRIMARY'"; // Column_name
         if ($this->connectType === 'mysqli') {
 
-            $result = $this->connection->query("SHOW COLUMNS FROM {$table} WHERE `KEY` = 'PRI'");
-            return array_column($result->fetch_all(MYSQLI_ASSOC), 'Field');
+            $result = $this->connection->query($sql);
+            return array_column($result->fetch_all(MYSQLI_ASSOC), 'Column_name');
         } else {
 
-            $stmt = $this->connection->query("SHOW COLUMNS FROM {$table} WHERE `KEY` = 'PRI'");
-            return array_column($stmt->fetchAll(), 'Field');
+            $stmt = $this->connection->query($sql);
+            return array_column($stmt->fetchAll(), 'Column_name');
         }
     }
 
-    public function beginTransaction()
+    public function beginTransaction(): bool
     {
-        if ($this->connectType === 'mysqli') {
-            return $this->connection->begin_transaction();
+        $level = ++$this->transactionLevel;
+        $hasSavepoint = $level > 1;
+        $savepoint = "sp_{$level}";
+
+        if ($hasSavepoint) {
+            $this->execute("SAVEPOINT {$savepoint}");
+            return true;
         } else {
-            return $this->connection->beginTransaction();
+            if ($this->connectType === 'mysqli') {
+                return $this->connection->begin_transaction();
+            } else {
+                return $this->connection->beginTransaction();
+            }
         }
     }
 
-    public function commit()
+    public function commit(): bool
     {
-        if ($this->connectType === 'mysqli') {
-            return $this->connection->commit();
+        if ($this->transactionLevel == 0)
+            throw new \RuntimeException("当前不在事务中");
+
+        $level = $this->transactionLevel--;
+        $hasSavepoint = $level > 1;
+        $savepoint = "sp_{$level}";
+        if ($hasSavepoint) {
+            $this->execute("RELEASE SAVEPOINT {$savepoint}");
+            return true;
         } else {
-            return $this->connection->commit();
+            if ($this->connectType === 'mysqli') {
+                return $this->connection->commit();
+            } else {
+                return $this->connection->commit();
+            }
         }
     }
 
-    public function rollback()
+    public function rollback(): bool
     {
-        if ($this->connectType === 'mysqli') {
-            return $this->connection->rollback();
+        if ($this->transactionLevel == 0)
+            throw new \RuntimeException("当前不在事务中");
+
+        $level = $this->transactionLevel--;
+        $hasSavepoint = $level > 1;
+        $savepoint = "sp_{$level}";
+
+        if ($hasSavepoint) {
+            $this->execute("ROLLBACK TO SAVEPOINT {$savepoint}");
+            return true;
         } else {
-            return $this->connection->rollback();
+            if ($this->connectType === 'mysqli') {
+                return $this->connection->rollback();
+            } else {
+                return $this->connection->rollback();
+            }
         }
     }
 
-    public function runTransaction(callable $callBack){
+    public function runTransaction(callable $callback, bool $prevent = false): mixed
+    {
         try {
             $this->beginTransaction();
 
-            if ($callBack($this)) {
+            $result = $callback($this);
+
+            if ($result !== false) {
                 $this->commit();
-                return true;
+                return $result;
+
             } else {
                 $this->rollback();
                 return false;
             }
-        } catch (\Exception $e) {
+
+        } catch (\Throwable $e) {
+
             $this->rollback();
-            return false;
+            if ($prevent)
+                return false;
+            throw $e;
         }
     }
 
-    public function lastInsertId()
+    public function lastInsertId(): bool|int|string
     {
         if ($this->connectType === 'mysqli') {
             return $this->connection->insert_id;

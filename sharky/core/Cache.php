@@ -3,11 +3,14 @@
 /**
  * @description 缓存控制类
  * @author Sharky
- * @date 2025-4-25
- * @version 1.3.1
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
+
+use InvalidArgumentException;
+use Sharky\Exceptions\UnsupportedTypeException;
 
 class Cache
 {
@@ -19,7 +22,7 @@ class Cache
     /**
      * 初始化缓存路径和默认设置
      */
-    public static function init()
+    public static function init(): void
     {
         if (self::$isInit) {
             return;
@@ -29,7 +32,7 @@ class Cache
             mkdir(self::$cachePath, 0755, true);
         }
 
-        $config = Container::getInstance()->make('config')->get('config.cache', []);
+        $config = Container::getInstance()->make('config')->get('cache', []);
         if (is_array($config)) {
             if (isset($config['path'])) {
                 self::$cachePath = rtrim($config['path'], '/') . '/';
@@ -38,10 +41,10 @@ class Cache
                 self::$defaultExpire = (int) $config['expire'];
             }
             if (isset($config['type'])) {
-                if (!in_array($config['type'], ['redis', 'file'])) {
-                    throw new \Exception("Invalid cache type: {$config['type']}");
+                if (!in_array (strtolower($config['type']), ['redis', 'file'])) {
+                    throw new UnsupportedTypeException("不支持的: {$config['type']}");
                 }
-                self::$useFile = $config['type'] !== 'redis';
+                self::$useFile = strtolower($config['type']) !== 'redis';
             }
         }
 
@@ -52,7 +55,7 @@ class Cache
      * 设置文件缓存路径
      * @param string $path 缓存路径
      */
-    public static function setCachePath($path)
+    public static function setCachePath($path): void
     {
         if (!self::$isInit) {
             self::init();
@@ -65,7 +68,7 @@ class Cache
         }
     }
 
-    public static function getCachePath()
+    public static function getCachePath(): string
     {
         if (!self::$isInit) {
             self::init();
@@ -73,20 +76,24 @@ class Cache
         return self::$cachePath;
     }
 
-    public static function useFile()
+    public static function useFile(): static
     {
         if (!self::$isInit) {
             self::init();
         }
         self::$useFile = true;
+
+        return new static;
     }
 
-    public static function useRedis()
+    public static function useRedis(): static
     {
         if (!self::$isInit) {
             self::init();
         }
         self::$useFile = false;
+
+        return new static;
     }
 
 
@@ -94,7 +101,7 @@ class Cache
      * 设置默认过期时间
      * @param int $seconds 过期时间（秒）
      */
-    public static function setDefaultExpire($seconds)
+    public static function setDefaultExpire($seconds): void
     {
         self::$defaultExpire = (int) $seconds;
     }
@@ -106,7 +113,7 @@ class Cache
      * @param int|null $expire 过期时间（秒），null 表示使用默认值
      * @return bool 是否存储成功
      */
-    public static function set($key, $value, $expire = null, )
+    public static function set($key, $value, $expire = null, ): bool
     {
         $sessionId = self::getSessionId();
 
@@ -118,7 +125,7 @@ class Cache
         return self::setCache($key, $value, 'shared', $expire);
     }
     
-    private static function setCache($key, $value, $sessionId, $expire = null)
+    private static function setCache($key, $value, $sessionId, $expire = null): bool
     {
         if (!self::$isInit) {
             self::init();
@@ -139,7 +146,7 @@ class Cache
      * @param mixed $default 默认值（未找到时返回）
      * @return mixed 缓存值或默认值
      */
-    public static function get($key, $default = null)
+    public static function get($key, $default = null): mixed
     {
         $sessionId = self::getSessionId();
 
@@ -151,7 +158,7 @@ class Cache
         return self::getCache($key, 'shared', $default);
     }
 
-    private static function getCache($key, $sessionId, $default = null)
+    private static function getCache($key, $sessionId, $default = null): mixed
     {
         if (!self::$isInit) {
             self::init();
@@ -174,18 +181,18 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否删除成功
      */
-    public static function delete($key, )
+    public static function delete($key, ): bool
     {
         $sessionId = self::getSessionId();
         return self::deleteCache($key, $sessionId);
     }
 
-    public static function deleteShared($key)
+    public static function deleteShared($key): bool
     {
         return self::deleteCache($key, 'shared');  
     }
 
-    private static function deleteCache($key, $sessionId)
+    private static function deleteCache($key, $sessionId): bool
     {
         if (!self::$isInit) {
             self::init();
@@ -206,7 +213,7 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否存在
      */
-    public static function exists($key)
+    public static function exists($key): bool
     {
         $sessionId = self::getSessionId();
         return self::existsCache($key, $sessionId);
@@ -240,7 +247,7 @@ class Cache
      * @param int $expire 过期时间（秒）
      * @return bool 是否存储成功
      */
-    private static function setRedis($key, $value, $expire, $sessionId)
+    private static function setRedis($key, $value, $expire, $sessionId): bool
     {
         $success = Redis::set("{$sessionId}:{$key}", serialize($value));
         if ($success && $expire > 0) {
@@ -254,7 +261,7 @@ class Cache
      * @param string $key 缓存键
      * @return mixed 缓存值或 null
      */
-    private static function getRedis($key, $sessionId, $default = null)
+    private static function getRedis($key, $sessionId, $default = null): mixed
     {
         $value = Redis::get("{$sessionId}:{$key}");
         return $value !== null ? unserialize($value) : $default;
@@ -265,7 +272,7 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否删除成功
      */
-    private static function deleteRedis($key, $sessionId)
+    private static function deleteRedis($key, $sessionId): int
     {
         return Redis::delete("{$sessionId}:{$key}");
     }
@@ -275,7 +282,7 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否存在
      */
-    private static function existsRedis($key, $sessionId)
+    private static function existsRedis($key, $sessionId): bool
     {
         return Redis::exists("{$sessionId}:{$key}");
     }
@@ -289,7 +296,7 @@ class Cache
      * @param int $expire 过期时间（秒）
      * @return bool 是否存储成功
      */
-    private static function setFile($key, $value, $expire, $sessionId)
+    private static function setFile($key, $value, $expire, $sessionId): bool
     {
         $filename = self::getFilename($key, $sessionId);
         $data = [
@@ -307,7 +314,7 @@ class Cache
      * @param mixed $default 默认值（未找到时返回）
      * @return mixed 缓存值或默认值
      */
-    private static function getFile($key, $sessionId, $default = null)
+    private static function getFile($key, $sessionId, $default = null): mixed
     {
         $filename = self::getFilename($key, $sessionId);
 
@@ -334,7 +341,7 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否删除成功
      */
-    private static function deleteFile($key, $sessionId)
+    private static function deleteFile($key, $sessionId): bool
     {
         $filename = self::getFilename($key, $sessionId);
         if (file_exists($filename)) {
@@ -348,7 +355,7 @@ class Cache
      * @param string $key 缓存键
      * @return bool 是否存在
      */
-    private static function existsFile($key, $sessionId)
+    private static function existsFile($key, $sessionId): bool
     {
         $filename = self::getFilename($key, $sessionId);
         if (!file_exists($filename)) {
@@ -374,7 +381,7 @@ class Cache
      * @param string $key 缓存键
      * @return string 文件路径
      */
-    private static function getFilename($key, $sessionId)
+    private static function getFilename($key, $sessionId): string
     {
         // 将缓存键转换为安全的文件名
         $safeKey = preg_replace('/[^a-zA-Z0-9\-_]/', '_', $key);
@@ -386,7 +393,7 @@ class Cache
         return $userDir . $safeKey . '.cache';
     }
 
-    public static function getSessionId()
+    public static function getSessionId(): mixed
     {
         if (self::$sessionId) {
             return self::$sessionId;
@@ -397,7 +404,7 @@ class Cache
         return $_SESSION['session_id'] ?? session_id();
     }
 
-    public static function setSessionId($sessionId)
+    public static function setSessionId($sessionId): void
     {
         self::$sessionId = $sessionId;
     }

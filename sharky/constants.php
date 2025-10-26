@@ -3,13 +3,13 @@
 /**
  * @description 常数文件
  * @author Sharky
- * @date 2025-4-23
- * @version 1.3.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
  // 版本和版权信息
 define('PROJECT', "SharkyPHP");
-define('VERSION', "1.3.0");
+define('VERSION', "1.5.0-beta");
 define('COPYRIGHT', getCopyright(2024,'Forgot Fish'));
 
 // 定义框架目录常量

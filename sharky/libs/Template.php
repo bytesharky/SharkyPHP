@@ -3,15 +3,17 @@
 /**
  * @description 微模版引擎
  * @author Sharky
- * @date 2025-3-22
- * @version 1.1.1
- *
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Libs;
 
 use Sharky\Core\Container;
 use Sharky\Utils\ArrayUtils;
+
+use Sharky\Exceptions\FileNotFoundException;
+use Sharky\Exceptions\TemplateBuildException;
 
 class Template
 {
@@ -29,8 +31,8 @@ class Template
         $this->isDebug = $config->get('config.isdebug', false);
 
         // 视图路径和缓存路径
-        $templateDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('config.template.path', 'views');
-        $cacheDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('config.template.cache', 'caches');
+        $templateDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('template.path', 'views');
+        $cacheDir = SITE_ROOT . DIRECTORY_SEPARATOR . $config->get('template.cache', 'caches');
 
         $this->templateDir = rtrim($templateDir, DIRECTORY_SEPARATOR);
         $this->cacheDir = rtrim($cacheDir, DIRECTORY_SEPARATOR);
@@ -47,8 +49,8 @@ class Template
         $container = Container::getInstance();
         $config = $container->make('config');
         // 加载多语言
-        $langPath = $config->get('config.language.path');
-        $defaultLang = $config->get('config.language.default');
+        $langPath = $config->get('template.language.path');
+        $defaultLang = $config->get('template.language.default');
         $defaultFile = implode(DIRECTORY_SEPARATOR, [SITE_ROOT, $langPath, $defaultLang.".php"]);
         $userFile = implode(DIRECTORY_SEPARATOR, [SITE_ROOT, $langPath, $lang.".php"]);
         // 默认语言
@@ -100,8 +102,9 @@ class Template
             !file_exists($cacheFile) || 
             filemtime($cacheFile) < filemtime($templatePath)) {
             if (!file_exists($templatePath)) {
-                throw new \Exception("模版文件{$templatePath}不存在");
+                throw new FileNotFoundException("模版文件{$templatePath}不存在");
             }
+            
             // 创建缓存路径
             if (!is_dir($this->cacheDir)) {
                 mkdir($this->cacheDir, 0755, true);
@@ -212,11 +215,11 @@ class Template
         }
 
         if (count($allMatches[0]) > 1) {
-            throw new \Exception('不允许存在多个extends语句');
+            throw new TemplateBuildException('不允许存在多个extends语句');
         }
 
         if (!preg_match('/^' . substr($extendsPattern, 1), $content, $matches)) {
-            throw new \Exception('extends语句前不能有其他语句');
+            throw new TemplateBuildException('extends语句前不能有其他语句');
         } else {
             $parentCompiled = $this->compile($matches[1], false);
             $parentContent = file_get_contents($parentCompiled);
@@ -239,7 +242,7 @@ class Template
                 $blockName = $blockMatch[1];
                 $blockContent = $blockMatch[2];
                 if (isset($blocks[$blockName])) {
-                    throw new \Exception("block名称[{$blockName}]重定义");
+                    throw new TemplateBuildException("block名称[{$blockName}]重定义");
                 } else {
                     $blocks[$blockName] = $blockContent;
                 }

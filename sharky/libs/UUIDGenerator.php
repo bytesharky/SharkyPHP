@@ -1,4 +1,12 @@
 <?php
+
+/**
+ * @description UUID生成器
+ * @author Sharky
+ * @date 2025-5-7
+ * @version 1.4.0
+ */
+
 namespace Sharky\Libs;
 
 use InvalidArgumentException;
@@ -34,7 +42,7 @@ class UUIDGenerator
     public static function UUIDv2($localDomain, $localIdentifier)
     {
         if ($localDomain < 0 || $localDomain > 255) {
-            throw new InvalidArgumentException('Invalid local domain');
+            throw new InvalidArgumentException('localDomain 应该在[0-255]之间');
         }
 
         $time = microtime(true) * 10000000 + 0x01B21DD213814000;
@@ -57,7 +65,7 @@ class UUIDGenerator
     public static function UUIDv3($namespace, $name)
     {
         if (!self::isUUID($namespace)) {
-            throw new InvalidArgumentException('Invalid namespace UUID');
+            throw new InvalidArgumentException('命名空间应该是一个合法的UUID');
         }
 
         $namespaceBin = hex2bin(str_replace(['-', '{', '}'], '', $namespace));
@@ -94,7 +102,7 @@ class UUIDGenerator
     public static function UUIDv5($namespace, $name)
     {
         if (!self::isUUID($namespace)) {
-            throw new InvalidArgumentException('Invalid namespace UUID');
+            throw new InvalidArgumentException('命名空间应该是一个合法的UUID');
         }
 
         $namespaceBin = hex2bin(str_replace(['-', '{', '}'], '', $namespace));

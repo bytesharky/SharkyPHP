@@ -3,8 +3,8 @@
 /**
  * @description Session管理器
  * @author Sharky
- * @date 2024-12
- * @version 1.0.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Libs;

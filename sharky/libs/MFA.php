@@ -1,9 +1,9 @@
 <?php
 /**
- * @description Multi-Factor Authentication (MFA) Class
+ * @description 多因素身份认证
  * @author Sharky
- * @date 2025-3-25
- * @version 1.3.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Libs;
@@ -57,6 +57,23 @@ class MFA
         return $secret;
     }
 
+
+    /**
+     * 为给定的密钥和标签生成一个二维码 URL。
+     * @param string $account 二维码的用户标签（通常是用户名或电子邮件地址）
+     * @param string $secret 安全密钥
+     * @param string $issuer 二维码的发行者（可选）
+     * @return string 二维码 URL
+     */
+    public static function makeQRCodeUrl($account, $secret, $issuer = 'SharkyPHP')
+    {
+        $issuer = urlencode($issuer);
+        $label = urlencode($account);
+        $label = "{$issuer}:{$label}";
+        $url = "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}";
+        return $url;
+    }
+
     /**
      * 为给定的密钥和标签生成一个二维码 URL。
      * @param string $account 二维码的用户标签（通常是用户名或电子邮件地址）
@@ -66,11 +83,7 @@ class MFA
     public function getQRCodeUrl($account, $issuer = 'SharkyPHP')
     {
         $secret = $this->secret;
-        $issuer = urlencode($issuer);
-        $label = urlencode($account);
-        $label = "{$issuer}:{$label}";
-        $url = "otpauth://totp/{$label}?secret={$secret}&issuer={$issuer}";
-        return $url;
+        return MFA::makeQRCodeUrl($account, $secret, $issuer);
     }
 
     /**

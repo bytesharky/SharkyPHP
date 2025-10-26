@@ -3,12 +3,12 @@
 /**
  * @description 响应类
  * @author Sharky
- * @date 2025-4-25
- * @version 1.3.1
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
-use Exception;
+use InvalidArgumentException;
 use SimpleXMLElement;
 
 class Response
@@ -21,15 +21,18 @@ class Response
     private mixed $body = [];
     private string $restful = 'html';
 
-    public function content_type($contentType)
+    public function content_type($contentType, $charset = ''): static
     {
+        $charset = empty($charset) ? $this->charset : $charset;
         $this->contentType = $contentType;
+        $this->header('content-type', "{$contentType}; charset={$charset}");
         return $this;
     }
 
     public function charset($charset)
     {
         $this->charset = $charset;
+        $this->header('content-type', $this->contentType ?? "" . "; charset={$charset}");
         return $this;
     }
 
@@ -40,9 +43,21 @@ class Response
                 if (!is_string($k)) {
                     throw new \InvalidArgumentException('Header key 只能是字符串');
                 }
-                $this->header($k, $v);
+                $this->header(strtolower($k), $v);
             }
             return $this;
+        }
+
+        if (($key = trim($key)) === "content-type") {
+            $typeAndChar = explode(';', $value);
+            isset($typeAndChar[0]) && $this->contentType = trim($typeAndChar[0]);
+            if (isset($typeAndChar[1])) {
+                $charset = trim(strtolower($typeAndChar[1]));
+                if (strpos($charset, "charset=") === 0) {
+                    $charset = substr($charset, strlen("charset="));
+                }
+                $this->charset = $charset;
+            }
         }
 
         if (is_array($value)) {
@@ -52,7 +67,15 @@ class Response
         return $this;
     }
 
-    public function body($body = [])
+    public function getheader($key): mixed
+    {
+        if (isset($this->headers[$key])) {
+            return $this->headers[$key];
+        }
+        return false;
+    }
+
+    public function body($body = []): static
     {
         if (
             is_array($body) ||
@@ -74,73 +97,74 @@ class Response
             $this->guess = 200;
             $this->body = null;
         } else {
-            throw new \InvalidArgumentException('Invalid body type');
+            throw new InvalidArgumentException('Invalid body type');
         }
 
         return $this;
     }
 
-    public function json($body = [], $status = null, $headers = [])
+    public function json($body = [], $status = null, $headers = []): static
     {
         $this->restful = 'json';
-        $this->body($body);
-        $this->status($status ?? $this->guess);
-        $this->header($headers);
+        $body && $this->body($body);
+        $status && $this->status($status ?? $this->guess);
+        $headers && $this->header($headers);
         $this->content_type('application/json');
         return $this;
     }
 
-    public function xml($body = [], $status = null, $headers = [])
+    public function xml($body = [], $status = null, $headers = []): static
     {
         $this->restful = 'xml';
-        $this->body($body);
-        $this->status($status ?? $this->guess);
-        $this->header($headers);
+        $body && $this->body($body);
+        $status && $this->status($status ?? $this->guess);
+        $headers && $this->header($headers);
         $this->content_type('application/xml');
         return $this;
     }
-    
-    public function html($body = '', $status = null, $headers = [])
+
+    public function html($body = '', $status = null, $headers = []): static
     {
         $this->restful = 'html';
-        $this->body($body);
-        $this->status($status ?? $this->guess);
-        $this->header($headers);
+        $body && $this->body($body);
+        $status && $this->status($status ?? $this->guess);
+        $headers && $this->header($headers);
         $this->content_type('text/html');
         return $this;
     }
 
-    public function status($status = 200)
+    public function status($status = 200): static
     {
         $this->status = $status;
         return $this;
     }
 
-    private function getContent($status)
+    private function getContent($status): array|bool|string
     {
         $restful = $this->restful;
 
-        $result = $this->fetchStatusJson($status);
-        if (!empty($this->body)){
-            $result['data'] = $this->body;
-        }
+        $result = $this->body;
 
         if (strtolower($restful) === "json") {
-            return json_encode($result, JSON_UNESCAPED_UNICODE);
+            if (is_string($result)) {
+                return $result;
+            } else {
+                return json_encode($result, JSON_UNESCAPED_UNICODE);
+            }
 
         } elseif (strtolower($restful) === "xml") {
             $config = Container::getInstance()->make('config');
             $xmlroot = $config->get('config.xmlroot', "root");
             $xmlData = new SimpleXMLElement("<?xml version=\"1.0\"?><$xmlroot></$xmlroot>");
-            $this->arrayToXml( $result, $xmlData);
+            $this->arrayToXml($result, $xmlData);
             return $xmlData->asXML();
         }
 
         if ($status === 200) {
 
             if (is_array($this->body) || is_object($this->body)) {
-                $this->body = json_encode($this->body,JSON_UNESCAPED_UNICODE);
-            } 
+                $this->body = json_encode($this->body, JSON_UNESCAPED_UNICODE);
+            }
             return $this->body ?? '';
 
         } else {
@@ -157,7 +181,10 @@ class Response
         }
     }
 
-    private function arrayToXml($data, &$xmlData) {
+    private function arrayToXml($data, &$xmlData): void
+    {
+        if (!is_array($data))
+            return;
         foreach ($data as $key => $value) {
             if (is_numeric($key)) {
                 $key = "item-{$key}";
@@ -171,21 +198,21 @@ class Response
         }
     }
 
-    public function render($body, $status = null)
+    public function render($body, $status = null): static
     {
         $this->body($body);
         $this->status($status ?? $this->guess);
         return $this;
     }
 
-    public function redirect($url, $status = 302)
+    public function redirect($url, $status = 302): static
     {
         $this->body($url);
         $this->status($status);
         return $this;
     }
 
-    public function __toString()
+    public function __toString(): string
     {
         $callerInfo = debug_backtrace();
         $classname = $callerInfo[1]['class'];
@@ -195,25 +222,11 @@ class Response
             return self::class;
         }
 
-        if (!empty($this->contentType)) {
-            $this->header("content-type", "{$this->contentType}; charset={$this->charset}");
-        }
-
         if (
             !$this->in_header("content-type") &&
-            !key_exists("content-type", array_change_key_case($this->headers, CASE_LOWER))
+            !key_exists("content-type", $this->headers)
         ) {
-            $config = Container::getInstance()->make('config');
-            $this->restful = $config->get('config.restful', "");
-            if (strtolower($this->restful) === "json") {
-                $this->header("content-type", "application/json; charset={$this->charset}");
-
-            } elseif (strtolower($this->restful) === "xml") {
-                $this->header("content-type", "application/xml; charset={$this->charset}");
-
-            } else {
-                $this->header("content-type", "text/html; charset={$this->charset}");
-            }
+            $this->setDefaultContentType();
         }
 
         http_response_code($this->status);
@@ -227,33 +240,30 @@ class Response
         if (in_array($this->status, [301, 302, 303, 307, 308])) {
             if (is_array($this->body)) {
                 $url = $body['Location'] ?? null;
-            } else if (is_string($this->body)) {  
+            } else if (is_string($this->body)) {
                 $url = $this->body;
             }
             if (!empty($url)) {
                 header("Location: {$url}", true, $this->status);
             }
             if (!$this->in_header('Location')) {
-                throw new Exception('重定向地址不能为空');
+                throw new InvalidArgumentException('重定向地址不能为空');
             }
             return '';
         }
-
-
-
         return $this->getContent($this->status);
     }
 
-    private function in_header($key)
+    private function in_header($key): bool
     {
         $headers = headers_list();
-        $isSet = array_filter($headers, function ($header) use ($key) {
+        $isSet = array_filter($headers, function ($header) use ($key): bool {
             return stripos($header, $key) === 0;
         });
         return !empty($isSet);
     }
 
-    private function fetchStatusJson($statusCode)
+    public function fetchStatusJson($statusCode): array
     {
         $statusMessages = [
             100 => "Continue",
@@ -318,5 +328,36 @@ class Response
             'message' => isset($statusMessages[$statusCode]) ? $statusMessages[$statusCode] : 'Unknown Error'
         ];
         return $data;
+    }
+
+    private function setDefaultContentType(): string
+    {
+        $config = Container::getInstance()->make('config');
+        $this->restful = $config->get('config.restful', "");
+        if (strtolower($this->restful) === "json") {
+            $this->header("content-type", "application/json; charset={$this->charset}");
+            return "application/json";
+
+        } elseif (strtolower($this->restful) === "xml") {
+            $this->header("content-type", "application/xml; charset={$this->charset}");
+            return "application/xml";
+
+        } else {
+            $this->header("content-type", "text/html; charset={$this->charset}");
+            return "text/html";
+        }
+    }
+
+    public function __get($key): mixed
+    {
+        if (property_exists($this, $key)) {
+            if (isset($this->$key)) {
+                return $this->$key;
+            } else if ($key === "contentType") {
+                return $this->setDefaultContentType();
+            }
+            return null;
+        }
+        throw new InvalidArgumentException("属性 $key 不存在");
     }
 }

@@ -3,12 +3,12 @@
 /**
  * @description 配置管理器模块
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
-
+use Sharky\Exceptions\ConfigNotFoundException;
 use Sharky\Utils\ArrayUtils;
 
 class Config
@@ -25,27 +25,27 @@ class Config
     }
 
     // 加载框架核心配置文件
-    protected function initConfigs()
+    protected function initConfigs(): void
     {
         if (!is_dir($this->coreConfig)) {
-            throw new \Exception("核心配置目录不存在");
+            throw new ConfigNotFoundException("核心配置目录不存在");
         }
         $this->configs = $this->loadConfigByDir($this->coreConfig);
     }
 
     // 加载站点配置目录
-    public function loadConfigs()
+    public function loadConfigs(): void
     {
         $siteConfig =  getSitePath()."/configs";
         if (!is_dir($siteConfig)) {
-            throw new \Exception("站点配置目录不存在");
+            throw new ConfigNotFoundException("站点配置目录不存在");
         }
         $siteConfig = $this->loadConfigByDir($siteConfig);
         $this->configs = ArrayUtils::deepMerge($this->configs, $siteConfig);
     }
 
     // 加载指定目录的配置文件并返回数据
-    private function loadConfigByDir($directory)
+    private function loadConfigByDir($directory): array
     {
         // 目录不存在时返回空数组
         if (!is_dir($directory)) {
@@ -68,7 +68,7 @@ class Config
     }
 
     // 根据点分字符串读取配置值
-    public function get($path, $default = null)
+    public function get($path, $default = null): mixed
     {
         return ArrayUtils::get($this->configs, $path, $default);
     }

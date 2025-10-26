@@ -3,11 +3,13 @@
 /**
  * @description Redis数据库连接池
  * @author Sharky
- * @date 2025-4-25
- * @version 1.3.1
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core\Redis;
+
+use Sharky\Exceptions\ConfigNotFoundException;
 
 class Pool{
     private $master = null;
@@ -33,7 +35,7 @@ class Pool{
         return $sticky;
     }
 
-    public function select($db) {
+    public function select($db): static {
         $this->database = $db;  
         return $this;
     }
@@ -49,7 +51,7 @@ class Pool{
         } else if (isset($this->config['master'])) {
             $host = $this->config['master'];
         } else {
-            new \Exception("数据库配置master不存在");
+            new ConfigNotFoundException("Redis 从数据库配置 slave 不存在");
         }
 
         $this->slave = $this->connect(
@@ -70,7 +72,7 @@ class Pool{
         if (isset($this->config['master'])) {
             $host = $this->config['master'];
         } else {
-            new \Exception("数据库配置master不存在");
+            new ConfigNotFoundException("Redis 主数据库配置 master 不存在");
         }
 
         $this->master = $this->connect(
@@ -85,7 +87,7 @@ class Pool{
             ->select($this->database);
     }
 
-    public function prefix($prefix) {
+    public function prefix($prefix): static {
         $this->prefix = $prefix;
         return $this;
     }

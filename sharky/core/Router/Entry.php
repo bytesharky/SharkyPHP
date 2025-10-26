@@ -3,8 +3,8 @@
 /**
  * @description 路由条目模块
  * @author Sharky
- * @date 2025-3-21
- * @version 1.1.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core\Router;
@@ -26,7 +26,7 @@ class Entry
     }
     
     // 添加中间件到当前路由
-    public function middleware($middleware)
+    public function middleware($middleware): static
     {
         if (is_array($middleware)) {
             $this->middleware = array_merge($this->middleware, $middleware);
@@ -38,7 +38,7 @@ class Entry
     }
 
     //排除中间件
-    public function withoutMiddleware($middleware){
+    public function withoutMiddleware($middleware): static{
         if (!is_array($middleware)) {
             $middleware = [$middleware];
         }

@@ -1,10 +1,10 @@
 <?php
 
 /**
- * @description 中间件类
+ * @description 中间件模块
  * @author Sharky
- * @date 2025-3-21
- * @version 1.0.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
@@ -12,15 +12,11 @@ namespace Sharky\Core;
 // 中间件接口
 interface MiddlewareInterface
 {
-    public function handle($request, callable $next);
+    public function handle(Request $request, callable $next);
 }
 
 // 中间件基类
 abstract class Middleware implements MiddlewareInterface
 {
-    public function handle($request, callable $next)
-    {
-        // 在这里执行中间件逻辑
-        return $next($request);
-    }
+
 }

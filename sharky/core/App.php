@@ -3,11 +3,12 @@
 /**
  * @description 框架核心
  * @author Sharky
- * @date 2024-11-1
- * @version 1.0.0
+ * @date 2025-5-7
+ * @version 1.4.0
  */
 
 namespace Sharky\Core;
+use Sharky\Exceptions\SharkyException;
 
 class App
 {
@@ -34,15 +35,25 @@ class App
     }
 
     // 启动应用
-    public function run()
+    public function run(): void
     {
         // 开启缓冲区
         ob_start();
 
-        // 派发路由
+        // 设置时区
+        $timezoneId = config('config.timezone', 'Asia/Shanghai');
+        date_default_timezone_set($timezoneId);
+
+        // 派遣路由
         $method = $_SERVER['REQUEST_METHOD'];
         $uri = $_SERVER['REQUEST_URI'];
-        echo($this->router->dispatch($method, $uri));
+
+        $response = $this->router->dispatch($method, $uri);
+
+        // 清空缓冲区
+        ob_clean();
+
+        echo $response;
 
         // 输出并关闭缓冲区
         ob_end_flush();
